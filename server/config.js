@@ -16,6 +16,9 @@ module.exports = {
   AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS, 10) || 250,
   AI_TEMPERATURE: parseFloat(process.env.AI_TEMPERATURE) || 0.85,
   AI_TIMEOUT: parseInt(process.env.AI_TIMEOUT, 10) || 15000,
+  // 대화 메모리 윈도우 — 현재 user 메시지 제외, 직전 N개 메시지만 모델에 전달.
+  // K=4 = 직전 2턴(user+assistant 각 2개). 비용·품질 균형.
+  CONVERSATION_WINDOW: parseInt(process.env.CONVERSATION_WINDOW, 10) || 4,
   MAX_RESPONSE_LENGTH: parseInt(process.env.MAX_RESPONSE_LENGTH, 10) || 280,
 
   // Groq (Primary) — fastest LPU inference, OpenAI-compatible

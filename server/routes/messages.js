@@ -11,6 +11,7 @@
 
 const express = require('express');
 const router = express.Router();
+const config = require('../config');
 const sessionModel = require('../models/session');
 const messageModel = require('../models/message');
 const gameManager = require('../services/gameManager');
@@ -95,10 +96,15 @@ router.post('/:id/messages', async (req, res) => {
 
     messageModel.createMessage(session.id, 'player', message.trim(), newTurnCount, session.phase);
 
-    // ⚠️ 이전 페이즈 단서 누수 차단: 현재 페이즈의 메시지만 모델에 전달.
+    // ⚠️ 이전 페이즈 단서 누수 차단: 현재 페이즈의 메시지만.
+    // 💰 비용 제어: 현재 user 메시지(방금 저장한 마지막 것) 제외 후 직전 K개만 전달.
+    //    buildPromptMessages가 현재 user 메시지는 별도로 push하므로 여기선 제외해야 중복 없음.
     const phaseMessages = messageModel.getMessagesBySessionAndPhase(session.id, session.phase);
-    const conversationHistory = phaseMessages
+    const priorMessages = phaseMessages
       .filter(m => m.role === 'player' || m.role === 'cosseogi')
+      .slice(0, -1); // 마지막(=방금 저장한 현재 user) 제외
+    const conversationHistory = priorMessages
+      .slice(-config.CONVERSATION_WINDOW)
       .map(m => ({ role: m.role, content: m.content }));
 
     let aiResponse;
