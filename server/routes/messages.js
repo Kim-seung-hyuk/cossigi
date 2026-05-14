@@ -14,7 +14,11 @@ const router = express.Router();
 const sessionModel = require('../models/session');
 const messageModel = require('../models/message');
 const gameManager = require('../services/gameManager');
-const aiService = require('../services/aiService');
+// AI 서비스: USE_BEDROCK 환경변수 켜져 있으면 Bedrock 단독 모드.
+// (server/index_bedrock.js 진입점에서 켬)
+const aiService = process.env.USE_BEDROCK
+  ? require('../services/aiServiceBedrock')
+  : require('../services/aiService');
 const timerService = require('../services/timerService');
 
 /**
