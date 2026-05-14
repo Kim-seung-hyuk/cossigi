@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     phase2_turns INTEGER NOT NULL DEFAULT 0,
     phase3_turns INTEGER NOT NULL DEFAULT 0,
     keywords_collected TEXT NOT NULL DEFAULT '[]',
+    bedrock_input_tokens INTEGER NOT NULL DEFAULT 0,
+    bedrock_output_tokens INTEGER NOT NULL DEFAULT 0,
+    bedrock_call_count INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (player_id) REFERENCES players(id)
 );
 

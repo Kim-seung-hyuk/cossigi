@@ -12,6 +12,16 @@ const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-be
 const config = require('../config');
 const { buildPromptMessages } = require('../prompts/cosseogi');
 
+// Claude 3 Haiku (Bedrock) 공식 가격 — us-east-1, 2024-03 기준
+// https://aws.amazon.com/bedrock/pricing/
+const HAIKU_INPUT_PRICE_PER_1K_USD = 0.00025;
+const HAIKU_OUTPUT_PRICE_PER_1K_USD = 0.00125;
+
+function calculateBedrockCostUsd(inputTokens, outputTokens) {
+  return (inputTokens  / 1000) * HAIKU_INPUT_PRICE_PER_1K_USD
+       + (outputTokens / 1000) * HAIKU_OUTPUT_PRICE_PER_1K_USD;
+}
+
 let bedrockClient = null;
 
 function getBedrockClient() {
@@ -79,7 +89,14 @@ async function callBedrock(systemPrompt, messages) {
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
     if (responseBody.content && responseBody.content.length > 0) {
-      return responseBody.content[0].text;
+      const usage = responseBody.usage || {};
+      return {
+        text: responseBody.content[0].text,
+        usage: {
+          input_tokens:  usage.input_tokens  || 0,
+          output_tokens: usage.output_tokens || 0
+        }
+      };
     }
     throw new Error('Bedrock response has no content');
   } finally {
@@ -117,13 +134,19 @@ function censorKeywords(text, phase) {
 /**
  * AI 응답 생성 — Bedrock 단독 호출.
  * 실패 시 즉시 에러 throw (운영자가 즉시 인지하도록).
+ *
+ * @returns {Promise<{text: string, usage: {input_tokens: number, output_tokens: number}}>}
+ *   text는 검열/잘림 후처리까지 마친 최종 응답. usage는 비용 측정용 raw 토큰 수.
  */
 async function generateResponse(context) {
   const { systemPrompt, messages } = buildPromptMessages(context);
 
   try {
-    const response = await callBedrock(systemPrompt, messages);
-    return censorKeywords(truncateResponse(response), context.phase);
+    const { text, usage } = await callBedrock(systemPrompt, messages);
+    return {
+      text: censorKeywords(truncateResponse(text), context.phase),
+      usage
+    };
   } catch (err) {
     console.error('[AI Service Bedrock] Bedrock 호출 실패:', err.message);
     throw new Error('AI 응답 생성에 실패했습니다. 다시 시도해주세요.');
@@ -134,5 +157,8 @@ module.exports = {
   generateResponse,
   truncateResponse,
   censorKeywords,
-  callBedrock
+  callBedrock,
+  calculateBedrockCostUsd,
+  HAIKU_INPUT_PRICE_PER_1K_USD,
+  HAIKU_OUTPUT_PRICE_PER_1K_USD
 };

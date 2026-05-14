@@ -155,11 +155,44 @@ function getRankedSessions(limit) {
 
 /**
  * Get top 10 ranked sessions.
- * 
+ *
  * @returns {object[]} Top 10 ranked session records with player name
  */
 function getTop10Sessions() {
   return getRankedSessions(10);
+}
+
+/**
+ * Bedrock 호출 1회분의 토큰 사용량을 세션에 누적.
+ * 1 row UPDATE — Bedrock 응답 직후 호출.
+ */
+function addBedrockUsage(id, inputTokens, outputTokens) {
+  const db = getDatabase();
+  db.prepare(`
+    UPDATE sessions
+       SET bedrock_input_tokens  = bedrock_input_tokens  + ?,
+           bedrock_output_tokens = bedrock_output_tokens + ?,
+           bedrock_call_count    = bedrock_call_count    + 1
+     WHERE id = ?
+  `).run(inputTokens || 0, outputTokens || 0, id);
+}
+
+/**
+ * Bedrock 호출이 1회라도 발생한 최근 N개 세션을 시간 역순으로 조회.
+ * 평균 비용 산출용.
+ */
+function getRecentBedrockSessions(limit) {
+  const db = getDatabase();
+  return db.prepare(`
+    SELECT s.id, s.status, s.started_at, s.ended_at, s.turn_count,
+           s.bedrock_input_tokens, s.bedrock_output_tokens, s.bedrock_call_count,
+           p.name AS player_name
+      FROM sessions s
+      JOIN players p ON s.player_id = p.id
+     WHERE s.bedrock_call_count > 0
+     ORDER BY s.started_at DESC
+     LIMIT ?
+  `).all(limit);
 }
 
 module.exports = {
@@ -170,5 +203,7 @@ module.exports = {
   deleteSession,
   getSessionsByPlayerId,
   getRankedSessions,
-  getTop10Sessions
+  getTop10Sessions,
+  addBedrockUsage,
+  getRecentBedrockSessions
 };

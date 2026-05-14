@@ -14,6 +14,7 @@ const { getDatabase, closeDatabase } = require('./database/connection');
 const sessionsRouter = require('./routes/sessions');
 const messagesRouter = require('./routes/messages');
 const rankingsRouter = require('./routes/rankings');
+const adminRouter = require('./routes/admin');
 
 const app = express();
 
@@ -35,6 +36,9 @@ app.use('/api/sessions', messagesRouter);
 
 // Rankings
 app.use('/api/rankings', rankingsRouter);
+
+// Admin (Bedrock 토큰/비용 통계)
+app.use('/api/admin', adminRouter);
 
 // --- Error Handling Middleware ---
 

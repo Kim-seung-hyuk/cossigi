@@ -102,12 +102,25 @@ router.post('/:id/messages', async (req, res) => {
 
     let aiResponse;
     try {
-      aiResponse = await aiService.generateResponse({
+      const result = await aiService.generateResponse({
         phase: session.phase,
         noiseLevel: session.noise_level,
         playerMessage: message.trim(),
         conversationHistory
       });
+      // Bedrock 모드는 {text, usage}, 일반 모드는 string 반환
+      if (typeof result === 'string') {
+        aiResponse = result;
+      } else {
+        aiResponse = result.text;
+        if (result.usage) {
+          sessionModel.addBedrockUsage(
+            session.id,
+            result.usage.input_tokens,
+            result.usage.output_tokens
+          );
+        }
+      }
     } catch (aiError) {
       console.error('[Messages] AI service error:', aiError.message);
       aiResponse = '지직... 응답 생성에 실패했어... 다시 한번 말해줄래?';
