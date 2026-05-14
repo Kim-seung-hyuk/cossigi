@@ -24,26 +24,19 @@ router.post('/', (req, res) => {
   try {
     const { playerName, phone, studentId, consent } = req.body;
 
-    // 1. Validate name (1-20 chars)
+    // 1. Validate name (1-20 chars). 이름 중복 허용 — 학번/전화번호로 식별.
     const validation = playerModel.validateName(playerName);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.error });
     }
 
-    // 2. Check if name is already taken
-    if (playerModel.isNameTaken(playerName)) {
-      return res.status(400).json({ error: '이미 사용 중인 이름입니다. 다른 이름을 입력해주세요' });
-    }
-
-    // 3. Create player record (phone + 학번 + 동의는 보상 추첨용 옵션 정보)
+    // 2. Create player record (phone + 학번 + 동의는 보상 추첨용 옵션 정보)
+    //    전화번호·학번 중복 시 createPlayer 내부에서 메시지와 함께 throw.
     let player;
     try {
       player = playerModel.createPlayer(playerName, { phone, studentId, consent: !!consent });
     } catch (validationErr) {
       return res.status(400).json({ error: validationErr.message });
-    }
-    if (!player) {
-      return res.status(400).json({ error: '이미 사용 중인 이름입니다. 다른 이름을 입력해주세요' });
     }
 
     // 4. Create session record

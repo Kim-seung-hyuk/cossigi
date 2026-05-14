@@ -1,11 +1,14 @@
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     phone TEXT DEFAULT NULL,
     student_id TEXT DEFAULT NULL,
     consent_at TEXT DEFAULT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- 이름은 중복 허용. 전화번호·학번은 NULL 제외하고 중복 불허 (partial UNIQUE).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_players_phone      ON players(phone)      WHERE phone IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_players_student_id ON players(student_id) WHERE student_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,

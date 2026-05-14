@@ -117,8 +117,17 @@ function createPlayer(name, extra = {}) {
     ).run(trimmed, phoneNormalized, studentIdNormalized, consentAt);
     return { id: result.lastInsertRowid, name: trimmed };
   } catch (err) {
-    if (err.message && err.message.includes('UNIQUE constraint failed')) {
-      return null;
+    const msg = err.message || '';
+    if (msg.includes('UNIQUE constraint failed')) {
+      // partial unique index: 'idx_players_phone' / 'idx_players_student_id'
+      if (msg.includes('phone')) {
+        throw new Error('이미 등록된 전화번호입니다. 다른 번호로 시도해주세요');
+      }
+      if (msg.includes('student_id')) {
+        throw new Error('이미 등록된 학번입니다. 다른 학번으로 시도해주세요');
+      }
+      // 안전망 (예상 못 한 UNIQUE 위반)
+      throw new Error('중복된 정보가 있습니다. 입력값을 확인해주세요');
     }
     throw err;
   }

@@ -54,6 +54,38 @@ function initializeSchema(database) {
     database.exec('ALTER TABLE players ADD COLUMN student_id TEXT DEFAULT NULL');
   }
 
+  // players.name UNIQUE 제거 마이그레이션
+  // SQLite는 컬럼 제약 변경 불가 → 테이블 재생성 방식.
+  const playersDDL = database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='players'"
+  ).get();
+  if (playersDDL && /name\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i.test(playersDDL.sql)) {
+    database.exec(`
+      BEGIN TRANSACTION;
+      CREATE TABLE players_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT DEFAULT NULL,
+        student_id TEXT DEFAULT NULL,
+        consent_at TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO players_new (id, name, phone, student_id, consent_at, created_at)
+        SELECT id, name, phone, student_id, consent_at, created_at FROM players;
+      DROP TABLE players;
+      ALTER TABLE players_new RENAME TO players;
+      COMMIT;
+    `);
+  }
+
+  // 전화번호·학번 partial UNIQUE 인덱스 (NULL 다수 허용)
+  database.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_players_phone      ON players(phone)      WHERE phone IS NOT NULL'
+  );
+  database.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_players_student_id ON players(student_id) WHERE student_id IS NOT NULL'
+  );
+
   // messages 테이블 후속 컬럼
   const messageCols = database.prepare("PRAGMA table_info(messages)").all().map(c => c.name);
   if (!messageCols.includes('phase')) {
