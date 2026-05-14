@@ -56,10 +56,28 @@ function validatePhone(phone) {
 }
 
 /**
+ * 학번 형식 검증 — 숫자 6~10자리 (국민대 8자리 기준 + 타 대학 호환).
+ * 공백 자동 제거.
+ *
+ * @param {string} studentId
+ * @returns {{ valid: boolean, normalized?: string, error?: string }}
+ */
+function validateStudentId(studentId) {
+  if (!studentId || typeof studentId !== 'string' || studentId.trim().length === 0) {
+    return { valid: false, error: '학번을 입력해주세요' };
+  }
+  const digits = studentId.replace(/\s/g, '');
+  if (!/^\d{6,10}$/.test(digits)) {
+    return { valid: false, error: '학번은 숫자 6~10자리로 입력해주세요' };
+  }
+  return { valid: true, normalized: digits };
+}
+
+/**
  * Create a new player.
  *
  * @param {string} name - Player name
- * @param {{ phone?: string, consent?: boolean }} [extra] - 개인정보 (선택)
+ * @param {{ phone?: string, studentId?: string, consent?: boolean }} [extra] - 개인정보 (선택)
  * @returns {{ id: number, name: string } | null} Created player or null if name is taken
  * @throws {Error} If validation fails
  */
@@ -72,10 +90,11 @@ function createPlayer(name, extra = {}) {
   const trimmed = name.trim();
   const db = getDatabase();
 
-  // 개인정보 (선택): phone + 동의가 모두 있을 때만 저장
+  // 개인정보 (선택): phone/학번 + 동의가 모두 있을 때만 저장
   let phoneNormalized = null;
+  let studentIdNormalized = null;
   let consentAt = null;
-  if (extra.phone || extra.consent) {
+  if (extra.phone || extra.studentId || extra.consent) {
     if (!extra.consent) {
       throw new Error('개인정보 수집·이용 동의가 필요합니다');
     }
@@ -83,14 +102,19 @@ function createPlayer(name, extra = {}) {
     if (!phoneValidation.valid) {
       throw new Error(phoneValidation.error);
     }
+    const studentIdValidation = validateStudentId(extra.studentId);
+    if (!studentIdValidation.valid) {
+      throw new Error(studentIdValidation.error);
+    }
     phoneNormalized = phoneValidation.normalized;
+    studentIdNormalized = studentIdValidation.normalized;
     consentAt = new Date().toISOString();
   }
 
   try {
     const result = db.prepare(
-      'INSERT INTO players (name, phone, consent_at) VALUES (?, ?, ?)'
-    ).run(trimmed, phoneNormalized, consentAt);
+      'INSERT INTO players (name, phone, student_id, consent_at) VALUES (?, ?, ?, ?)'
+    ).run(trimmed, phoneNormalized, studentIdNormalized, consentAt);
     return { id: result.lastInsertRowid, name: trimmed };
   } catch (err) {
     if (err.message && err.message.includes('UNIQUE constraint failed')) {
@@ -137,6 +161,7 @@ function deletePlayer(id) {
 module.exports = {
   validateName,
   validatePhone,
+  validateStudentId,
   isNameTaken,
   createPlayer,
   getPlayerById,

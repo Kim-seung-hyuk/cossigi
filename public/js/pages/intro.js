@@ -234,6 +234,7 @@ const IntroPage = (() => {
       const data = await ApiService.createSession(
         name,
         window.pendingPlayerPhone,
+        window.pendingPlayerStudentId,
         window.pendingPlayerConsent
       );
       window.gameState = {
@@ -247,6 +248,7 @@ const IntroPage = (() => {
         playerName: name
       };
       window.pendingPlayerName = null;
+      window.pendingPlayerStudentId = null;
       window.pendingPlayerPhone = null;
       window.pendingPlayerConsent = null;
       window.location.hash = '#game';

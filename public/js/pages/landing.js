@@ -40,6 +40,9 @@ const LandingPage = (() => {
             <div class="landing__form-prefix">요원명 (1~20자)</div>
             <input type="text" id="player-name-input" class="input-line" placeholder="요원명을 입력하세요" maxlength="20" autocomplete="off">
 
+            <div class="landing__form-prefix landing__form-prefix--gap">학번 <span class="landing__form-note">(숫자만, 우수 참여자 확인용)</span></div>
+            <input type="text" id="player-student-id-input" class="input-line" placeholder="예: 20231234" maxlength="10" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+
             <div class="landing__form-prefix landing__form-prefix--gap">전화번호 <span class="landing__form-note">(우수 참여자 보상 추첨용)</span></div>
             <input type="tel" id="player-phone-input" class="input-line" placeholder="010-1234-5678" maxlength="13" autocomplete="off" inputmode="tel">
 
@@ -47,7 +50,7 @@ const LandingPage = (() => {
               <input type="checkbox" id="consent-check" class="consent-row__box">
               <span class="consent-row__text">
                 <strong>개인정보 수집·이용 동의 (필수)</strong>
-                <span class="consent-row__detail">수집 항목: 요원명, 전화번호 / 목적: 우수 참여자 보상 추첨 및 안내 / 보유 기간: 행사 종료 후 1개월</span>
+                <span class="consent-row__detail">수집 항목: 요원명, 학번, 전화번호 / 목적: 우수 참여자 보상 추첨 및 안내 / 보유 기간: 행사 종료 후 1개월</span>
               </span>
             </label>
 
@@ -84,17 +87,18 @@ const LandingPage = (() => {
 
     const startBtn = document.getElementById('start-btn');
     const nameInput = document.getElementById('player-name-input');
+    const studentIdInput = document.getElementById('player-student-id-input');
     const phoneInput = document.getElementById('player-phone-input');
     const consentBox = document.getElementById('consent-check');
     const errorEl = document.getElementById('name-error');
 
-    const submit = () => handleStart(nameInput, phoneInput, consentBox, errorEl, startBtn);
+    const submit = () => handleStart(nameInput, studentIdInput, phoneInput, consentBox, errorEl, startBtn);
 
     if (startBtn) {
       startBtn.addEventListener('click', submit);
     }
 
-    [nameInput, phoneInput].forEach(el => {
+    [nameInput, studentIdInput, phoneInput].forEach(el => {
       if (!el) return;
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') submit();
@@ -103,6 +107,13 @@ const LandingPage = (() => {
         errorEl.style.display = 'none';
       });
     });
+
+    // 학번은 숫자만 허용
+    if (studentIdInput) {
+      studentIdInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+      });
+    }
 
     // 전화번호 자동 하이픈 포맷팅
     if (phoneInput) {
@@ -147,8 +158,9 @@ const LandingPage = (() => {
     return html;
   }
 
-  function handleStart(nameInput, phoneInput, consentBox, errorEl, startBtn) {
+  function handleStart(nameInput, studentIdInput, phoneInput, consentBox, errorEl, startBtn) {
     const name = nameInput.value.trim();
+    const studentId = studentIdInput ? studentIdInput.value.trim() : '';
     const phone = phoneInput ? phoneInput.value.trim() : '';
     const consented = consentBox ? consentBox.checked : false;
 
@@ -160,6 +172,16 @@ const LandingPage = (() => {
     if (name.length > 20) {
       showError(errorEl, '요원명은 20자 이하로 입력해주세요');
       nameInput.focus();
+      return;
+    }
+    if (!studentId) {
+      showError(errorEl, '학번을 입력해주세요');
+      studentIdInput && studentIdInput.focus();
+      return;
+    }
+    if (!/^\d{6,10}$/.test(studentId)) {
+      showError(errorEl, '학번은 숫자 6~10자리로 입력해주세요');
+      studentIdInput && studentIdInput.focus();
       return;
     }
     if (!phone) {
@@ -180,8 +202,9 @@ const LandingPage = (() => {
       return;
     }
 
-    // Defer createSession until intro confirm. Stash name/phone/consent.
+    // Defer createSession until intro confirm. Stash name/studentId/phone/consent.
     window.pendingPlayerName = name;
+    window.pendingPlayerStudentId = studentId;
     window.pendingPlayerPhone = phone;
     window.pendingPlayerConsent = true;
     window.location.hash = '#intro';

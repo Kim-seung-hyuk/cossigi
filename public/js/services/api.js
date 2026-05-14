@@ -28,10 +28,10 @@ const ApiService = (() => {
 
   return {
     // Session APIs
-    createSession(playerName, phone, consent) {
+    createSession(playerName, phone, studentId, consent) {
       return request('/sessions', {
         method: 'POST',
-        body: JSON.stringify({ playerName, phone, consent })
+        body: JSON.stringify({ playerName, phone, studentId, consent })
       });
     },
 

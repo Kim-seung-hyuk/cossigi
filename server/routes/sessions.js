@@ -22,7 +22,7 @@ const timerService = require('../services/timerService');
  */
 router.post('/', (req, res) => {
   try {
-    const { playerName, phone, consent } = req.body;
+    const { playerName, phone, studentId, consent } = req.body;
 
     // 1. Validate name (1-20 chars)
     const validation = playerModel.validateName(playerName);
@@ -35,10 +35,10 @@ router.post('/', (req, res) => {
       return res.status(400).json({ error: '이미 사용 중인 이름입니다. 다른 이름을 입력해주세요' });
     }
 
-    // 3. Create player record (phone + 동의는 보상 추첨용 옵션 정보)
+    // 3. Create player record (phone + 학번 + 동의는 보상 추첨용 옵션 정보)
     let player;
     try {
-      player = playerModel.createPlayer(playerName, { phone, consent: !!consent });
+      player = playerModel.createPlayer(playerName, { phone, studentId, consent: !!consent });
     } catch (validationErr) {
       return res.status(400).json({ error: validationErr.message });
     }
