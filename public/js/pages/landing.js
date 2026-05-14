@@ -29,7 +29,7 @@ const LandingPage = (() => {
             ▣ MISSION: ZERO NOISE
           </div>
 
-          <h1 class="landing__title glitch-2">코쓱이를 지켜줘</h1>
+          <h1 class="landing__title glitch-2">코쓱이의 비밀..?</h1>
 
           <p class="landing__subtitle">
             차세대통신 사업단의 양자 보안 시스템에 노이즈가 발생했습니다.<br>
