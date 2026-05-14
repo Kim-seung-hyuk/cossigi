@@ -56,26 +56,32 @@ function initializeSchema(database) {
 
   // players.name UNIQUE 제거 마이그레이션
   // SQLite는 컬럼 제약 변경 불가 → 테이블 재생성 방식.
+  // sessions가 players(id)를 FK로 참조하므로 마이그레이션 동안 foreign_keys OFF.
   const playersDDL = database.prepare(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='players'"
   ).get();
   if (playersDDL && /name\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i.test(playersDDL.sql)) {
-    database.exec(`
-      BEGIN TRANSACTION;
-      CREATE TABLE players_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT DEFAULT NULL,
-        student_id TEXT DEFAULT NULL,
-        consent_at TEXT DEFAULT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-      INSERT INTO players_new (id, name, phone, student_id, consent_at, created_at)
-        SELECT id, name, phone, student_id, consent_at, created_at FROM players;
-      DROP TABLE players;
-      ALTER TABLE players_new RENAME TO players;
-      COMMIT;
-    `);
+    database.pragma('foreign_keys = OFF');
+    try {
+      database.exec(`
+        BEGIN TRANSACTION;
+        CREATE TABLE players_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT DEFAULT NULL,
+          student_id TEXT DEFAULT NULL,
+          consent_at TEXT DEFAULT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO players_new (id, name, phone, student_id, consent_at, created_at)
+          SELECT id, name, phone, student_id, consent_at, created_at FROM players;
+        DROP TABLE players;
+        ALTER TABLE players_new RENAME TO players;
+        COMMIT;
+      `);
+    } finally {
+      database.pragma('foreign_keys = ON');
+    }
   }
 
   // 전화번호·학번 partial UNIQUE 인덱스 (NULL 다수 허용)
