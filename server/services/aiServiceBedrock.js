@@ -23,17 +23,45 @@ function getBedrockClient() {
 }
 
 /**
+ * Anthropic Messages API 규칙에 맞게 messages 정제:
+ *  1. 첫 메시지는 반드시 'user' (코쓱이 인사말이 첫 항목이면 잘라냄)
+ *  2. 같은 role이 연속되지 않게 정리 (Anthropic은 user/assistant 교대만 허용)
+ */
+function sanitizeForAnthropic(messages) {
+  // 1. 앞에서 assistant 메시지 제거 (user가 처음 나올 때까지)
+  let i = 0;
+  while (i < messages.length && messages[i].role !== 'user') i++;
+  let cleaned = messages.slice(i);
+
+  // 2. 연속된 같은 role은 합치기 (마지막 것 채택)
+  const merged = [];
+  for (const msg of cleaned) {
+    if (merged.length > 0 && merged[merged.length - 1].role === msg.role) {
+      merged[merged.length - 1] = msg; // 같은 role 연속 → 마지막 것으로 덮음
+    } else {
+      merged.push(msg);
+    }
+  }
+  return merged;
+}
+
+/**
  * Bedrock Claude 3 Haiku 호출.
  */
 async function callBedrock(systemPrompt, messages) {
   const client = getBedrockClient();
+
+  const sanitized = sanitizeForAnthropic(messages);
+  if (sanitized.length === 0) {
+    throw new Error('Anthropic용 messages 정제 후 내용 없음 (user 메시지 부재)');
+  }
 
   const requestBody = {
     anthropic_version: 'bedrock-2023-05-31',
     max_tokens: config.AI_MAX_TOKENS,
     temperature: config.AI_TEMPERATURE,
     system: systemPrompt,
-    messages
+    messages: sanitized
   };
 
   const command = new InvokeModelCommand({
