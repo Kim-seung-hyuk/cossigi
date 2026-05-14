@@ -35,6 +35,14 @@ const ApiService = (() => {
       });
     },
 
+    // 학번·전화번호 중복을 인트로 진입 전에 미리 확인
+    precheckPlayer(phone, studentId) {
+      return request('/players/precheck', {
+        method: 'POST',
+        body: JSON.stringify({ phone, studentId })
+      });
+    },
+
     getSession(sessionId) {
       return request(`/sessions/${sessionId}`);
     },

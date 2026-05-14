@@ -15,6 +15,7 @@ const sessionsRouter = require('./routes/sessions');
 const messagesRouter = require('./routes/messages');
 const rankingsRouter = require('./routes/rankings');
 const adminRouter = require('./routes/admin');
+const playersRouter = require('./routes/players');
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.use('/api/rankings', rankingsRouter);
 
 // Admin (Bedrock 토큰/비용 통계)
 app.use('/api/admin', adminRouter);
+
+// Players (precheck 등)
+app.use('/api/players', playersRouter);
 
 // --- Error Handling Middleware ---
 

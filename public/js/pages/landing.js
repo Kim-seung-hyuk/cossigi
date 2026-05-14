@@ -158,7 +158,7 @@ const LandingPage = (() => {
     return html;
   }
 
-  function handleStart(nameInput, studentIdInput, phoneInput, consentBox, errorEl, startBtn) {
+  async function handleStart(nameInput, studentIdInput, phoneInput, consentBox, errorEl, startBtn) {
     const name = nameInput.value.trim();
     const studentId = studentIdInput ? studentIdInput.value.trim() : '';
     const phone = phoneInput ? phoneInput.value.trim() : '';
@@ -201,6 +201,23 @@ const LandingPage = (() => {
       consentBox && consentBox.focus();
       return;
     }
+
+    // 서버 사전 중복 체크 — 중복이면 인트로로 넘어가지 않고 즉시 경고만 표시
+    if (startBtn) { startBtn.disabled = true; }
+    try {
+      await ApiService.precheckPlayer(phone, studentId);
+    } catch (err) {
+      // 409/400 응답은 err.message에 서버 메시지가 담김
+      showError(errorEl, err.message || '학번/전화번호 확인 중 오류가 발생했습니다');
+      if (err.message && err.message.includes('학번')) {
+        studentIdInput && studentIdInput.focus();
+      } else if (err.message && err.message.includes('전화')) {
+        phoneInput && phoneInput.focus();
+      }
+      if (startBtn) { startBtn.disabled = false; }
+      return; // ⚠️ 인트로로 넘어가지 않음
+    }
+    if (startBtn) { startBtn.disabled = false; }
 
     // Defer createSession until intro confirm. Stash name/studentId/phone/consent.
     window.pendingPlayerName = name;
