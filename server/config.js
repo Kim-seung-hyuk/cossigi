@@ -11,7 +11,9 @@ module.exports = {
   GAME_TIME_LIMIT: parseInt(process.env.GAME_TIME_LIMIT, 10) || 180,
 
   // AI common
-  AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS, 10) || 450,
+  // 코쓱이 응답은 잡담 20~50자 / 일반 60~120자 강제 → 한국어 약 150토큰 한계.
+  // 250으로 여유 두고 자름 (비용 최소화).
+  AI_MAX_TOKENS: parseInt(process.env.AI_MAX_TOKENS, 10) || 250,
   AI_TEMPERATURE: parseFloat(process.env.AI_TEMPERATURE) || 0.85,
   AI_TIMEOUT: parseInt(process.env.AI_TIMEOUT, 10) || 15000,
   MAX_RESPONSE_LENGTH: parseInt(process.env.MAX_RESPONSE_LENGTH, 10) || 280,
