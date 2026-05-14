@@ -49,9 +49,9 @@ router.post('/', (req, res) => {
     // 4. Create session record
     const session = sessionModel.createSession(player.id);
 
-    // 5. Save initial cosseogi greeting (in-character intro)
+    // 5. Save initial cosseogi greeting (in-character intro) — phase 1로 소속
     const greeting = '으윽... 모든 보안 취약점이 드러나서 우리 학생들의 정보가 위험해...! 지지직... 머릿속이 흐려... 누구야? 나 좀 도와줄 수 있어?';
-    messageModel.createMessage(session.id, 'cosseogi', greeting, null);
+    messageModel.createMessage(session.id, 'cosseogi', greeting, null, 1);
 
     // 6. Return session info
     const remainingSeconds = timerService.getRemainingSeconds(session.started_at);

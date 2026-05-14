@@ -53,6 +53,12 @@ function initializeSchema(database) {
   if (!playerCols.includes('student_id')) {
     database.exec('ALTER TABLE players ADD COLUMN student_id TEXT DEFAULT NULL');
   }
+
+  // messages 테이블 후속 컬럼
+  const messageCols = database.prepare("PRAGMA table_info(messages)").all().map(c => c.name);
+  if (!messageCols.includes('phase')) {
+    database.exec('ALTER TABLE messages ADD COLUMN phase INTEGER DEFAULT NULL');
+  }
 }
 
 /**

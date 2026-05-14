@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS messages (
     role TEXT NOT NULL CHECK(role IN ('player', 'cosseogi', 'system')),
     content TEXT NOT NULL,
     turn_number INTEGER,
+    phase INTEGER DEFAULT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (session_id) REFERENCES sessions(id)
 );

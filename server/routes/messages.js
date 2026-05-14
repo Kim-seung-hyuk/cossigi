@@ -93,10 +93,11 @@ router.post('/:id/messages', async (req, res) => {
       [currentPhaseTurnsKey]: currentPhaseTurns
     });
 
-    messageModel.createMessage(session.id, 'player', message.trim(), newTurnCount);
+    messageModel.createMessage(session.id, 'player', message.trim(), newTurnCount, session.phase);
 
-    const messages = messageModel.getMessagesBySessionId(session.id);
-    const conversationHistory = messages
+    // ⚠️ 이전 페이즈 단서 누수 차단: 현재 페이즈의 메시지만 모델에 전달.
+    const phaseMessages = messageModel.getMessagesBySessionAndPhase(session.id, session.phase);
+    const conversationHistory = phaseMessages
       .filter(m => m.role === 'player' || m.role === 'cosseogi')
       .map(m => ({ role: m.role, content: m.content }));
 
@@ -126,7 +127,7 @@ router.post('/:id/messages', async (req, res) => {
       aiResponse = '지직... 응답 생성에 실패했어... 다시 한번 말해줄래?';
     }
 
-    messageModel.createMessage(session.id, 'cosseogi', aiResponse, newTurnCount);
+    messageModel.createMessage(session.id, 'cosseogi', aiResponse, newTurnCount, session.phase);
 
     return res.json({
       response: aiResponse,
@@ -195,7 +196,7 @@ router.post('/:id/answer', (req, res) => {
       const feedbackMsg = result.isRebootPhase
         ? `✓ 키워드 "${result.keyword}" 획득! 모든 키워드를 수집했어. 이제 리부트 코드를 입력해줘!`
         : `✓ 키워드 "${result.keyword}" 획득! 노이즈 레벨이 ${result.noiseLevel}%로 감소했어.`;
-      messageModel.createMessage(session.id, 'system', feedbackMsg, result.turn);
+      messageModel.createMessage(session.id, 'system', feedbackMsg, result.turn, session.phase);
 
       // 페이즈 전환 안내 (코쓱이 캐릭터 메시지로) — 사용자가 어떤 문제 푸는지 인지하도록
       const phaseGuide = {
@@ -205,7 +206,8 @@ router.post('/:id/answer', (req, res) => {
       };
       const guideMsg = phaseGuide[result.phase];
       if (guideMsg) {
-        messageModel.createMessage(session.id, 'cosseogi', guideMsg, result.turn);
+        // 안내 메시지는 새 페이즈 컨텍스트에 속함 (다음 페이즈 자유 대화의 시작점)
+        messageModel.createMessage(session.id, 'cosseogi', guideMsg, result.turn, result.phase);
       }
 
       return res.json({
@@ -226,7 +228,7 @@ router.post('/:id/answer', (req, res) => {
     sessionModel.updateSession(session.id, updates);
 
     const wrongMsg = `✗ "${answer.trim()}"은(는) 정답이 아니야. 다시 한번 코쓱이와 대화해보고 시도해봐!`;
-    messageModel.createMessage(session.id, 'system', wrongMsg, result.turn);
+    messageModel.createMessage(session.id, 'system', wrongMsg, result.turn, session.phase);
 
     return res.json({
       isCorrect: false,
@@ -301,8 +303,8 @@ router.post('/:id/reboot', (req, res) => {
       const score = gameManager.calculateScore(finalSession);
       sessionModel.endSession(session.id, '성공', score, timeCheck.elapsedSeconds);
 
-      messageModel.createMessage(session.id, 'player', code.trim(), newTurnCount);
-      messageModel.createMessage(session.id, 'system', 'System Reboot Success! 🎉', newTurnCount);
+      messageModel.createMessage(session.id, 'player', code.trim(), newTurnCount, session.phase);
+      messageModel.createMessage(session.id, 'system', 'System Reboot Success! 🎉', newTurnCount, session.phase);
 
       return res.json({
         success: true,
@@ -315,8 +317,8 @@ router.post('/:id/reboot', (req, res) => {
       });
     }
 
-    messageModel.createMessage(session.id, 'player', code.trim(), newTurnCount);
-    messageModel.createMessage(session.id, 'system', rebootResult.message, newTurnCount);
+    messageModel.createMessage(session.id, 'player', code.trim(), newTurnCount, session.phase);
+    messageModel.createMessage(session.id, 'system', rebootResult.message, newTurnCount, session.phase);
 
     return res.json({
       success: false,
