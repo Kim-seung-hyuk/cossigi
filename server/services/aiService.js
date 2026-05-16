@@ -216,18 +216,31 @@ function truncateResponse(text) {
  */
 function censorKeywords(text, phase) {
   if (!text) return text;
+  // 🏷️ v2 검열어 (AWS / 양자 / 보안)
   const censorMap = {
     1: [/AWS/gi, /Amazon Web Services/gi, /Amazon/gi, /아마존/g],
-    2: [/양자/g, /quantum/gi],
-    3: [/보안/g, /security/gi]
+    2: [
+      /양\s*자/g,
+      /quantum/gi, /큐\s*비\s*트/g, /qubit/gi,
+      /량\s*자/g, /량/g,
+      /양(?=\s*[.…·▓])/g,
+      /양\s*지[지직]+/g,
+      /Q(?=\s*[.…·\-])/g
+    ],
+    3: [
+      /보\s*안/g,
+      /security/gi,
+      /보(?=\s*[.…·▓])/g,
+      /보\s*지[지직]+/g,
+      /S(?=\s*[.…·\-])(?![QLTPI])/g
+    ]
   };
   const patterns = censorMap[phase] || [];
   let out = text;
   for (const p of patterns) {
     out = out.replace(p, '지지직');
   }
-  // 한자(CJK Unified Ideographs)는 어떤 단어든 글리치로 치환
-  // — Llama가 가끔 "什么", "合作" 같은 한자 출력하는 것 차단
+  // 한자(CJK)는 어떤 단어든 글리치로 치환 — 量子·保安 직접 표기 차단
   out = out.replace(/[一-鿿㐀-䶿]+/g, '...');
   return out;
 }

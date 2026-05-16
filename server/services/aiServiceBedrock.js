@@ -119,17 +119,33 @@ function truncateResponse(text) {
  */
 function censorKeywords(text, phase) {
   if (!text) return text;
+  // 🏷️ v2 검열어 (AWS / 양자 / 보안)
+  // 한국어는 일반어 충돌이 심해서 "첫 글자 + 글리치 마커" 패턴만 차단
+  // (양쪽·양식·보다·보내 같은 일반어는 글리치 마커 없으면 통과)
   const censorMap = {
     1: [/AWS/gi, /Amazon Web Services/gi, /Amazon/gi, /아마존/g],
-    2: [/양자/g, /quantum/gi],
-    3: [/보안/g, /security/gi]
+    2: [
+      /양\s*자/g,                           // '양 자' 띄어쓰기 우회까지 차단
+      /quantum/gi, /큐\s*비\s*트/g, /qubit/gi,
+      /량\s*자/g, /량/g,                    // 한자 음(量) 한글표기 차단
+      /양(?=\s*[.…·▓])/g,                  // "양...", "양·" 첫글자 누설
+      /양\s*지[지직]+/g,                    // "양 지지직"
+      /Q(?=\s*[.…·\-])/g                   // "Q..." 영문 첫글자
+    ],
+    3: [
+      /보\s*안/g,                           // '보 안' 띄어쓰기 우회
+      /security/gi,
+      /보(?=\s*[.…·▓])/g,                  // "보...", "보·" 첫글자
+      /보\s*지[지직]+/g,                    // "보 지지직"
+      /S(?=\s*[.…·\-])(?![QLTPI])/g        // "S..." 차단 (SQL/SLT/STP/SIP 등 제외)
+    ]
   };
   const patterns = censorMap[phase] || [];
   let out = text;
   for (const p of patterns) {
     out = out.replace(p, '지지직');
   }
-  // 한자 (CJK) 자동 글리치 — Claude는 거의 안 섞이지만 보험으로 유지
+  // 한자 (CJK) 자동 글리치 — 量子·保安 직접 표기 차단
   out = out.replace(/[一-鿿㐀-䶿]+/g, '...');
   return out;
 }
