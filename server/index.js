@@ -35,6 +35,7 @@ app.get('/api/health', (req, res) => {
     ok: true,
     ts: new Date().toISOString(),
     mode: process.env.USE_BEDROCK ? 'bedrock' : 'fallback',
+    gameVersion: config.GAME_VERSION,  // 🏷️ 어느 정답 세트 deploy 중인지
     uptimeSec: Math.round(process.uptime())
   });
 });

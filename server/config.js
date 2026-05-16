@@ -23,6 +23,11 @@ module.exports = {
   // /api/admin/* 엔드포인트 인증 키. 미설정 시 admin 라우터 자체 비활성(503).
   // 운영 시 .env 에 ADMIN_KEY=<랜덤 문자열 32자 이상> 설정 후 재시작.
   ADMIN_KEY: process.env.ADMIN_KEY || null,
+
+  // 🏷️ 게임 정답 버전 — 운영자가 어떤 버전 deploy 중인지 식별용 (/api/health에 노출).
+  //   'v1-5G-통신'      : 정답 AWS / 5G / 통신     (현재 main)
+  //   'v2-양자-보안'    : 정답 AWS / 양자 / 보안   (git tag v2-quantum-security)
+  GAME_VERSION: process.env.GAME_VERSION || 'v1-5G-통신',
   MAX_RESPONSE_LENGTH: parseInt(process.env.MAX_RESPONSE_LENGTH, 10) || 280,
 
   // Groq (Primary) — fastest LPU inference, OpenAI-compatible

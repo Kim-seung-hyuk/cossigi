@@ -119,10 +119,11 @@ function truncateResponse(text) {
  */
 function censorKeywords(text, phase) {
   if (!text) return text;
+  // 🏷️ v1 검열어 (AWS / 5G / 통신)
   const censorMap = {
     1: [/AWS/gi, /Amazon Web Services/gi, /Amazon/gi, /아마존/g],
-    2: [/양자/g, /quantum/gi],
-    3: [/보안/g, /security/gi]
+    2: [/5G/gi, /5세대/g, /오지(?![는를을이가에])/g, /파이브\s*지/gi, /fifth generation/gi],
+    3: [/통신(?![사대학원망])/g] // '통신사', '통신대' 등 일반 단어는 허용
   };
   const patterns = censorMap[phase] || [];
   let out = text;

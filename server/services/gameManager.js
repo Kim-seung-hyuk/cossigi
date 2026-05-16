@@ -1,6 +1,11 @@
 /**
- * Game Manager - Core game logic for Mission: Zero Noise
- * 
+ * Game Manager — Core game logic for Mission: Zero Noise
+ *
+ * ============================================================
+ *  🏷️ GAME VERSION: v1 — AWS / 5G / 통신
+ *  (대안 v2 — AWS / 양자 / 보안 은 git tag v2-quantum-security 참고)
+ * ============================================================
+ *
  * Handles keyword validation, score calculation, noise level management,
  * phase transitions, and reboot code verification.
  */
@@ -8,10 +13,11 @@
 const config = require('../config');
 
 // Phase keywords definition
+// 🏷️ v1 정답: AWS · 5G · 통신
 const PHASE_KEYWORDS = {
   1: 'AWS',
-  2: '양자',
-  3: '보안'
+  2: '5G',
+  3: '통신'
 };
 
 // Noise levels after each phase completion
@@ -25,7 +31,7 @@ const NOISE_LEVELS = {
 };
 
 // The exact reboot code (case-sensitive, uppercase only)
-const REBOOT_CODE = 'AWS 양자 보안';
+const REBOOT_CODE = 'AWS 5G 통신';
 
 /**
  * Check if a player's message matches the keyword for the given phase.
@@ -205,7 +211,7 @@ function processMessage(session, message) {
 /**
  * Verify the reboot code entered by the player.
  * Match is normalized: whitespace stripped + lowercased on both sides,
- * so "AWS 양자 보안", "aws양자보안", "Aws 양자 보안" all pass.
+ * so "AWS 5G 통신", "aws5g통신", "Aws 5g 통신" all pass.
  *
  * @param {string} code - The reboot code entered by the player
  * @returns {object} Verification result
