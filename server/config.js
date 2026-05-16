@@ -19,6 +19,10 @@ module.exports = {
   // 대화 메모리 윈도우 — 현재 user 메시지 제외, 직전 N개 메시지만 모델에 전달.
   // K=4 = 직전 2턴(user+assistant 각 2개). 비용·품질 균형.
   CONVERSATION_WINDOW: parseInt(process.env.CONVERSATION_WINDOW, 10) || 4,
+
+  // /api/admin/* 엔드포인트 인증 키. 미설정 시 admin 라우터 자체 비활성(503).
+  // 운영 시 .env 에 ADMIN_KEY=<랜덤 문자열 32자 이상> 설정 후 재시작.
+  ADMIN_KEY: process.env.ADMIN_KEY || null,
   MAX_RESPONSE_LENGTH: parseInt(process.env.MAX_RESPONSE_LENGTH, 10) || 280,
 
   // Groq (Primary) — fastest LPU inference, OpenAI-compatible

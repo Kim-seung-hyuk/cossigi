@@ -9,12 +9,26 @@
 
 const express = require('express');
 const router = express.Router();
+const config = require('../config');
 const sessionModel = require('../models/session');
 const {
   calculateBedrockCostUsd,
   HAIKU_INPUT_PRICE_PER_1K_USD,
   HAIKU_OUTPUT_PRICE_PER_1K_USD
 } = require('../services/aiServiceBedrock');
+
+// 인증 미들웨어 — ADMIN_KEY 미설정이면 admin 자체 비활성.
+// 인증 방법: 헤더 `x-admin-key: <KEY>` 또는 쿼리 `?key=<KEY>`.
+router.use((req, res, next) => {
+  if (!config.ADMIN_KEY) {
+    return res.status(503).json({ error: 'admin endpoints disabled (ADMIN_KEY not configured)' });
+  }
+  const key = req.header('x-admin-key') || req.query.key;
+  if (key !== config.ADMIN_KEY) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+});
 
 // 한화 환산용 환율 (env 미지정 시 1380 KRW/USD 가정).
 // 정확한 청구 금액은 AWS 콘솔 기준, 여기는 어림셈용.

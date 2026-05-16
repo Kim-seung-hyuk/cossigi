@@ -29,6 +29,16 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // --- Routes ---
 
+// Health check — 부스 노트북에서 1분마다 ping해서 서버 죽었는지 즉시 감지
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    ts: new Date().toISOString(),
+    mode: process.env.USE_BEDROCK ? 'bedrock' : 'fallback',
+    uptimeSec: Math.round(process.uptime())
+  });
+});
+
 // Session management
 app.use('/api/sessions', sessionsRouter);
 

@@ -11,6 +11,9 @@
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 const config = require('../config');
 const { buildPromptMessages } = require('../prompts/cosseogi');
+// Gemini fallback — Bedrock 일시 장애 시 사용. callGemini는 호출 시점에
+// process.env.GEMINI_API_KEY 를 읽으므로 .env 갱신 후 서버 재시작(start.sh)만으로 키 교체 가능.
+const { callGemini } = require('./aiService');
 
 // Claude 3 Haiku (Bedrock) 공식 가격 — us-east-1, 2024-03 기준
 // https://aws.amazon.com/bedrock/pricing/
@@ -132,23 +135,43 @@ function censorKeywords(text, phase) {
 }
 
 /**
- * AI 응답 생성 — Bedrock 단독 호출.
- * 실패 시 즉시 에러 throw (운영자가 즉시 인지하도록).
+ * AI 응답 생성 — Bedrock 우선, 실패 시 Gemini 1단 fallback.
  *
- * @returns {Promise<{text: string, usage: {input_tokens: number, output_tokens: number}}>}
- *   text는 검열/잘림 후처리까지 마친 최종 응답. usage는 비용 측정용 raw 토큰 수.
+ * Bedrock throttle / 일시 장애 / IAM Role drop 시 Gemini로 자동 전환되어
+ * 부스 운영 중 사용자가 "응답 생성 실패" 메시지를 보는 빈도를 낮춤.
+ * Gemini 호출은 토큰 카운트 없음(0 반환) — cost-stats는 Bedrock 호출분만 집계.
+ *
+ * @returns {Promise<{text: string, usage: {input_tokens: number, output_tokens: number}, provider: 'bedrock'|'gemini'}>}
  */
 async function generateResponse(context) {
   const { systemPrompt, messages } = buildPromptMessages(context);
 
+  // 1) Bedrock 우선
   try {
     const { text, usage } = await callBedrock(systemPrompt, messages);
     return {
       text: censorKeywords(truncateResponse(text), context.phase),
-      usage
+      usage,
+      provider: 'bedrock'
     };
   } catch (err) {
-    console.error('[AI Service Bedrock] Bedrock 호출 실패:', err.message);
+    console.error('[AI Service Bedrock] Bedrock 호출 실패 — Gemini fallback 시도:', err.message);
+  }
+
+  // 2) Gemini 1단 fallback (key 미설정 시 즉시 에러)
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('[AI Service Bedrock] GEMINI_API_KEY 미설정 — fallback 불가');
+    throw new Error('AI 응답 생성에 실패했습니다. 다시 시도해주세요.');
+  }
+  try {
+    const text = await callGemini(systemPrompt, messages);
+    return {
+      text: censorKeywords(truncateResponse(text), context.phase),
+      usage: { input_tokens: 0, output_tokens: 0 }, // Gemini는 토큰 측정 안 함 (cost-stats 영향 없음)
+      provider: 'gemini'
+    };
+  } catch (err) {
+    console.error('[AI Service Bedrock] Gemini fallback도 실패:', err.message);
     throw new Error('AI 응답 생성에 실패했습니다. 다시 시도해주세요.');
   }
 }
