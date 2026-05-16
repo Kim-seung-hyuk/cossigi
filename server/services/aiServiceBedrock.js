@@ -120,10 +120,17 @@ function truncateResponse(text) {
 function censorKeywords(text, phase) {
   if (!text) return text;
   // 🏷️ v1 검열어 (AWS / 5G / 통신)
+  // 정답 첫 글자 단독 누설("5...지직", "통...지직")도 차단 — 일반 단어는 lookahead로 제외
   const censorMap = {
     1: [/AWS/gi, /Amazon Web Services/gi, /Amazon/gi, /아마존/g],
-    2: [/5G/gi, /5세대/g, /오지(?![는를을이가에])/g, /파이브\s*지/gi, /fifth generation/gi],
-    3: [/통신(?![사대학원망])/g] // '통신사', '통신대' 등 일반 단어는 허용
+    2: [
+      /5G/gi, /5세대/g, /오지(?![는를을이가에])/g, /파이브\s*지/gi, /fifth generation/gi,
+      /5(?![G\dg세])/g // 단독 '5' 차단. 단 '5G', '5세대', 다른 숫자(50,500)는 통과
+    ],
+    3: [
+      /통신(?![사대학원망])/g, // '통신사', '통신대', '통신망' 등 결합어 허용
+      /통(?![신사대학원망화과계제일합])/g // 단독 '통' 차단. 통신/통화/통과/통계/통제/통일/통합 등 일반 단어 통과
+    ]
   };
   const patterns = censorMap[phase] || [];
   let out = text;
