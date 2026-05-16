@@ -206,8 +206,8 @@ router.post('/:id/answer', (req, res) => {
 
       // 페이즈 전환 안내 (코쓱이 캐릭터 메시지로) — 사용자가 어떤 문제 푸는지 인지하도록
       const phaseGuide = {
-        2: '(눈을 반짝이며) 노이즈가 좀 줄었어! 이제 두 번째 문제야 — **우리넷 동글이 쓰는 통신망 기술 이름**을 맞춰야 해. LTE 다음 세대인 그 빠른 거 있잖아... 알지? 부스 자료에도 있어!',
-        3: '(한숨 돌리며) 휴... 좀 살 것 같아! 마지막 문제야 — **\'국민대학교 차세대OO 사업단\'** 빈칸 두 글자를 맞춰야 해. 신호 주고받는 그 분야 말이야. 부스 안 전공 홍보 자료 표지에 큼지막하게 적혀있어, 거기 봐!',
+        2: '(눈을 반짝이며) 노이즈가 좀 줄었어! 이제 두 번째 문제야 — 우리 사업단 핵심 분야 중 하나, **미시 세계 물리학 두 글자**를 맞춰야 해. 입자가 동시에 두 상태로 있는 그 신기한 거 있잖아!',
+        3: '(고개 끄덕이며) 좀 살 것 같아! 마지막 문제야 — 우리 사업단 안 **\'양자OO차세대통신 전공\'** 빈칸 두 글자! 해킹·도청 막는 정보 지키는 기술 분야 있잖아.',
         4: '(밝게 웃으며) 와! 모든 키워드 다 모았어!! 이제 세 키워드를 순서대로 띄어서 **리부트 코드 입력란**에 넣으면 시스템이 정상 복구돼. 너가 마지막 열쇠야!'
       };
       const guideMsg = phaseGuide[result.phase];
@@ -226,7 +226,8 @@ router.post('/:id/answer', (req, res) => {
         isGameOver: false,
         isRebootPhase: result.isRebootPhase,
         remainingSeconds: timeCheck.remainingSeconds,
-        feedback: feedbackMsg
+        feedback: feedbackMsg,
+        phaseGuideMessage: guideMsg || null  // 클라가 채팅창에 코쓱이 메시지로 추가하도록
       });
     }
 

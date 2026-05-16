@@ -364,6 +364,14 @@ const GamePage = (() => {
           content: data.feedback || `키워드 "${data.keyword}" 획득`
         }, noiseLevel, currentPhase);
 
+        // 페이즈 전환 안내 — 코쓱이가 채팅으로 다음 미션 알려줌
+        if (data.phaseGuideMessage) {
+          ChatArea.addMessage({
+            role: 'cosseogi',
+            content: data.phaseGuideMessage
+          }, noiseLevel, currentPhase);
+        }
+
         if (data.isRebootPhase) {
           ChatArea.addMessage({
             role: 'system',
@@ -466,13 +474,26 @@ const GamePage = (() => {
     }
   }
 
-  function handleTimeout() {
-    window.gameResult = {
-      status: '시간초과',
-      score: null,
-      elapsedSeconds: 180,
-      turnCount: turnCount
-    };
+  async function handleTimeout() {
+    // 서버에 시간초과 알림 → 지금까지 모은 키워드/완료한 페이즈로 점수 산정
+    try {
+      const data = await ApiService.timeoutSession(sessionId);
+      window.gameResult = {
+        status: '시간초과',
+        score: data.score,
+        elapsedSeconds: data.elapsedSeconds || 180,
+        turnCount: data.turnCount != null ? data.turnCount : turnCount,
+        keywords: data.keywordsCollected || keywords
+      };
+    } catch (err) {
+      // 서버 호출 실패 시 폴백 — 표시는 되지만 점수 산정은 부정확할 수 있음
+      window.gameResult = {
+        status: '시간초과',
+        score: null,
+        elapsedSeconds: 180,
+        turnCount: turnCount
+      };
+    }
     window.location.hash = '#result';
   }
 

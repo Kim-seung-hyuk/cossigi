@@ -12,6 +12,7 @@ const playerModel = require('../models/player');
 const sessionModel = require('../models/session');
 const messageModel = require('../models/message');
 const timerService = require('../services/timerService');
+const gameManager = require('../services/gameManager');
 
 /**
  * POST /api/sessions
@@ -98,6 +99,49 @@ router.get('/:id', (req, res) => {
   } catch (err) {
     console.error('[Sessions] Error getting session:', err.message);
     res.status(500).json({ error: '세션 조회 중 오류가 발생했습니다' });
+  }
+});
+
+/**
+ * POST /api/sessions/:id/timeout
+ * 클라이언트 타이머가 0에 도달했을 때 호출. 서버에서 점수 산정 + 세션 종료.
+ * 점수 = gameManager.calculateScore (timeout 분기: 완료한 페이즈 turn만 합산).
+ * 이미 종료된 세션이면 기존 결과 반환.
+ */
+router.post('/:id/timeout', (req, res) => {
+  try {
+    const session = sessionModel.getSessionById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: '세션을 찾을 수 없습니다' });
+    }
+
+    // 이미 종료됐으면 기존 점수 그대로 반환 (멱등성)
+    if (session.status !== 'in_progress') {
+      return res.json({
+        status: session.status,
+        score: session.score || 0,
+        elapsedSeconds: session.elapsed_seconds || 180,
+        turnCount: session.turn_count || 0,
+        keywordsCollected: JSON.parse(session.keywords_collected || '[]'),
+        alreadyEnded: true
+      });
+    }
+
+    const timeoutSession = { ...session, status: '시간초과' };
+    const score = gameManager.calculateScore(timeoutSession);
+    const elapsed = timerService.getTimeoutElapsed();
+    const updated = sessionModel.endSession(session.id, '시간초과', score, elapsed);
+
+    res.json({
+      status: '시간초과',
+      score,
+      elapsedSeconds: elapsed,
+      turnCount: updated.turn_count || 0,
+      keywordsCollected: JSON.parse(updated.keywords_collected || '[]')
+    });
+  } catch (err) {
+    console.error('[Sessions] Error processing timeout:', err.message);
+    res.status(500).json({ error: '시간초과 처리 중 오류가 발생했습니다' });
   }
 });
 

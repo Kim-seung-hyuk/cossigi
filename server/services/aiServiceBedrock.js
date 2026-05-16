@@ -118,8 +118,8 @@ function censorKeywords(text, phase) {
   if (!text) return text;
   const censorMap = {
     1: [/AWS/gi, /Amazon Web Services/gi, /Amazon/gi, /아마존/g],
-    2: [/5G/gi, /5세대/g, /오지(?![는를을이가에])/g, /파이브\s*지/gi, /fifth generation/gi],
-    3: [/통신(?![사대학원망])/g]
+    2: [/양자/g, /quantum/gi],
+    3: [/보안/g, /security/gi]
   };
   const patterns = censorMap[phase] || [];
   let out = text;

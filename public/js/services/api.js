@@ -53,6 +53,13 @@ const ApiService = (() => {
       });
     },
 
+    // 클라이언트 타이머가 0에 도달했을 때 — 서버에서 점수 산정 후 세션 종료
+    timeoutSession(sessionId) {
+      return request(`/sessions/${sessionId}/timeout`, {
+        method: 'POST'
+      });
+    },
+
     // Message APIs
     sendMessage(sessionId, message) {
       return request(`/sessions/${sessionId}/messages`, {

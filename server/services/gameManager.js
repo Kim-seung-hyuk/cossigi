@@ -10,8 +10,8 @@ const config = require('../config');
 // Phase keywords definition
 const PHASE_KEYWORDS = {
   1: 'AWS',
-  2: '5G',
-  3: '통신'
+  2: '양자',
+  3: '보안'
 };
 
 // Noise levels after each phase completion
@@ -25,7 +25,7 @@ const NOISE_LEVELS = {
 };
 
 // The exact reboot code (case-sensitive, uppercase only)
-const REBOOT_CODE = 'AWS 5G 통신';
+const REBOOT_CODE = 'AWS 양자 보안';
 
 /**
  * Check if a player's message matches the keyword for the given phase.
@@ -205,7 +205,7 @@ function processMessage(session, message) {
 /**
  * Verify the reboot code entered by the player.
  * Match is normalized: whitespace stripped + lowercased on both sides,
- * so "AWS 5G 통신", "aws5g통신", "Aws 5g 통신" all pass.
+ * so "AWS 양자 보안", "aws양자보안", "Aws 양자 보안" all pass.
  *
  * @param {string} code - The reboot code entered by the player
  * @returns {object} Verification result
