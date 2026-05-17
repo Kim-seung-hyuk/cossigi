@@ -32,7 +32,9 @@ function handleTimeoutIfExpired(session) {
 
   const timeoutSession = { ...session, status: '시간초과' };
   const score = gameManager.calculateScore(timeoutSession);
-  const updatedSession = sessionModel.endSession(
+  // ⚠️ endSession은 시간초과 dedup을 자동 실행하므로 반환값이 undefined일 수 있음
+  //   (자기 세션이 낮은 점수면 dedup으로 자기 자신이 삭제됨). pre-end session 사용.
+  sessionModel.endSession(
     session.id,
     '시간초과',
     score,
@@ -43,10 +45,10 @@ function handleTimeoutIfExpired(session) {
     expired: true,
     payload: {
       isCorrect: false,
-      phase: updatedSession.phase,
-      noiseLevel: updatedSession.noise_level,
-      turn: updatedSession.turn_count,
-      keywords: JSON.parse(updatedSession.keywords_collected || '[]'),
+      phase: session.phase,
+      noiseLevel: session.noise_level,
+      turn: session.turn_count,
+      keywords: JSON.parse(session.keywords_collected || '[]'),
       isGameOver: true,
       gameOverReason: '시간초과',
       score,

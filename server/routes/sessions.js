@@ -130,14 +130,16 @@ router.post('/:id/timeout', (req, res) => {
     const timeoutSession = { ...session, status: '시간초과' };
     const score = gameManager.calculateScore(timeoutSession);
     const elapsed = timerService.getTimeoutElapsed();
-    const updated = sessionModel.endSession(session.id, '시간초과', score, elapsed);
+    // ⚠️ endSession은 시간초과 dedup을 자동 실행하므로 반환값이 undefined일 수 있음
+    //   (자기 세션이 다른 시간초과보다 점수 낮아서 삭제된 경우). pre-end 값 사용.
+    sessionModel.endSession(session.id, '시간초과', score, elapsed);
 
     res.json({
       status: '시간초과',
       score,
       elapsedSeconds: elapsed,
-      turnCount: updated.turn_count || 0,
-      keywordsCollected: JSON.parse(updated.keywords_collected || '[]')
+      turnCount: session.turn_count || 0,
+      keywordsCollected: JSON.parse(session.keywords_collected || '[]')
     });
   } catch (err) {
     console.error('[Sessions] Error processing timeout:', err.message);
