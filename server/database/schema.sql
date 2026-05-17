@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS players (
     consent_at TEXT DEFAULT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
--- 이름은 중복 허용. 전화번호·학번은 NULL 제외하고 중복 불허 (partial UNIQUE).
-CREATE UNIQUE INDEX IF NOT EXISTS idx_players_phone      ON players(phone)      WHERE phone IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_players_student_id ON players(student_id) WHERE student_id IS NOT NULL;
+-- 이름·전화번호·학번 모두 중복 허용 (2026-05-17~).
+-- 중복 차단은 application 레벨 (precheck/createPlayer): "성공 세션 보유 여부"로 판단.
+-- 시간초과 재도전이 정책상 허용되므로 같은 phone/student_id의 새 player row가 정상 생성됨.
+CREATE INDEX IF NOT EXISTS idx_players_phone_lookup      ON players(phone)      WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_players_student_id_lookup ON players(student_id) WHERE student_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
