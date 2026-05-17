@@ -153,7 +153,7 @@ const GamePage = (() => {
       } else {
         ChatArea.addMessage({
           role: 'cosseogi',
-          content: '으윽... 모든 보안 취약점이 드러나서 우리 학생들의 정보가 위험해...! 지지직... 머릿속이 흐려... 누구야? 나 좀 도와줄 수 있어?'
+          content: '으윽... 통신 노이즈가 너무 심해서 머릿속이 흐려... 지지직... 시스템이 다 멈췄어... 누구야? 나 좀 도와줄 수 있어?'
         }, noiseLevel, currentPhase);
       }
       currentPhase = sessionData.phase;
@@ -165,7 +165,7 @@ const GamePage = (() => {
     } catch (err) {
       ChatArea.addMessage({
         role: 'cosseogi',
-        content: '으윽... 모든 보안 취약점이 드러나서 우리 학생들의 정보가 위험해...! 지지직... 머릿속이 흐려... 누구야? 나 좀 도와줄 수 있어?'
+        content: '으윽... 통신 노이즈가 너무 심해서 머릿속이 흐려... 지지직... 시스템이 다 멈췄어... 누구야? 나 좀 도와줄 수 있어?'
       }, noiseLevel, currentPhase);
       updateUI();
     }

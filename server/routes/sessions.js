@@ -44,7 +44,7 @@ router.post('/', (req, res) => {
     const session = sessionModel.createSession(player.id);
 
     // 5. Save initial cosseogi greeting (in-character intro) — phase 1로 소속
-    const greeting = '으윽... 모든 보안 취약점이 드러나서 우리 학생들의 정보가 위험해...! 지지직... 머릿속이 흐려... 누구야? 나 좀 도와줄 수 있어?';
+    const greeting = '으윽... 통신 노이즈가 너무 심해서 머릿속이 흐려... 지지직... 시스템이 다 멈췄어... 누구야? 나 좀 도와줄 수 있어?';
     messageModel.createMessage(session.id, 'cosseogi', greeting, null, 1);
 
     // 6. Return session info
