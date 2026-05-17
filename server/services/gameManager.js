@@ -30,7 +30,8 @@ const NOISE_LEVELS = {
   rebootComplete: 0
 };
 
-// The exact reboot code (case-sensitive, uppercase only)
+// 정답 형식. 검증 시 verifyRebootCode가 공백 제거 + 소문자화로 비교하므로
+// "AWS 5G 통신" / "aws5g통신" / "AwS 5g 통신" 모두 동일 처리됨.
 const REBOOT_CODE = 'AWS 5G 통신';
 
 /**
