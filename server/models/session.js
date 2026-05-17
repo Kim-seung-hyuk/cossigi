@@ -92,12 +92,68 @@ function updateSession(id, updates) {
 function endSession(id, status, score, elapsedSeconds) {
   const db = getDatabase();
   db.prepare(`
-    UPDATE sessions 
+    UPDATE sessions
     SET status = ?, score = ?, ended_at = datetime('now'), elapsed_seconds = ?
     WHERE id = ?
   `).run(status, score, elapsedSeconds, id);
 
+  // 🏷️ 시간초과 dedup: 같은 사용자(phone/student_id 매치)의 시간초과 세션 중
+  //   최고점만 남기고 나머지는 삭제. 정책상 1인당 시간초과 랭킹은 1개만 존재.
+  if (status === '시간초과') {
+    const ended = db.prepare('SELECT player_id FROM sessions WHERE id = ?').get(id);
+    if (ended) dedupTimeoutSessionsForPlayer(ended.player_id);
+  }
+
   return getSessionById(id);
+}
+
+/**
+ * 시간초과 세션 중복 정리 — 같은 phone 또는 student_id를 가진 시간초과 세션들 중
+ * 최고점만 남기고 나머지(메시지 포함)를 모두 삭제.
+ *
+ * 호출 시점: endSession(status='시간초과') 직후. 신규 세션이 막 끝난 시점이라
+ *           기존 시간초과 + 신규 시간초과 후보군을 동시 비교.
+ *
+ * @param {number} playerId - 방금 끝난 시간초과 세션의 player_id
+ * @returns {number} 삭제된 세션 수 (0이면 dedup 불필요)
+ */
+function dedupTimeoutSessionsForPlayer(playerId) {
+  const db = getDatabase();
+  const player = db.prepare('SELECT phone, student_id FROM players WHERE id = ?').get(playerId);
+  if (!player) return 0;
+
+  // phone OR student_id 매치 조건 구성 (둘 중 하나라도 있어야 dedup 의미 있음)
+  const conditions = [];
+  const params = [];
+  if (player.phone) {
+    conditions.push('p.phone = ?');
+    params.push(player.phone);
+  }
+  if (player.student_id) {
+    conditions.push('p.student_id = ?');
+    params.push(player.student_id);
+  }
+  if (conditions.length === 0) return 0;
+
+  // 매치되는 시간초과 세션 전부 — 점수 DESC, 동점 시 최신 우선
+  const sessions = db.prepare(`
+    SELECT s.id, s.score, s.started_at
+    FROM sessions s
+    JOIN players p ON p.id = s.player_id
+    WHERE s.status = '시간초과' AND (${conditions.join(' OR ')})
+    ORDER BY s.score DESC, s.started_at DESC
+  `).all(...params);
+
+  if (sessions.length <= 1) return 0;
+
+  const toDelete = sessions.slice(1).map(s => s.id); // 첫 번째(최고점) 제외 전부
+  const placeholders = toDelete.map(() => '?').join(',');
+
+  // 메시지 먼저(FK 제약), 세션 삭제
+  db.prepare(`DELETE FROM messages WHERE session_id IN (${placeholders})`).run(...toDelete);
+  const result = db.prepare(`DELETE FROM sessions WHERE id IN (${placeholders})`).run(...toDelete);
+
+  return result.changes;
 }
 
 /**
@@ -206,6 +262,7 @@ module.exports = {
   getSessionById,
   updateSession,
   endSession,
+  dedupTimeoutSessionsForPlayer,
   deleteSession,
   getSessionsByPlayerId,
   getRankedSessions,
