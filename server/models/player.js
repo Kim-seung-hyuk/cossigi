@@ -111,26 +111,30 @@ function createPlayer(name, extra = {}) {
     consentAt = new Date().toISOString();
   }
 
-  try {
-    const result = db.prepare(
-      'INSERT INTO players (name, phone, student_id, consent_at) VALUES (?, ?, ?, ?)'
-    ).run(trimmed, phoneNormalized, studentIdNormalized, consentAt);
-    return { id: result.lastInsertRowid, name: trimmed };
-  } catch (err) {
-    const msg = err.message || '';
-    if (msg.includes('UNIQUE constraint failed')) {
-      // partial unique index: 'idx_players_phone' / 'idx_players_student_id'
-      if (msg.includes('phone')) {
-        throw new Error('이미 등록된 전화번호입니다. 다른 번호로 시도해주세요');
-      }
-      if (msg.includes('student_id')) {
-        throw new Error('이미 등록된 학번입니다. 다른 학번으로 시도해주세요');
-      }
-      // 안전망 (예상 못 한 UNIQUE 위반)
-      throw new Error('중복된 정보가 있습니다. 입력값을 확인해주세요');
-    }
-    throw err;
+  // 🏷️ 재도전 허용: phone/student_id에 '성공' 세션이 이미 있으면 차단 (race 방어).
+  //   precheck에서 1차 검사했지만 사용자가 인트로 거치는 동안 같은 번호로 성공할 수도 있음.
+  if (phoneNormalized) {
+    const phoneSuccess = db.prepare(`
+      SELECT 1 FROM sessions s
+      JOIN players p ON p.id = s.player_id
+      WHERE p.phone = ? AND s.status = '성공' LIMIT 1
+    `).get(phoneNormalized);
+    if (phoneSuccess) throw new Error('이미 성공한 전화번호입니다. 다른 번호로 도전해주세요');
   }
+  if (studentIdNormalized) {
+    const sidSuccess = db.prepare(`
+      SELECT 1 FROM sessions s
+      JOIN players p ON p.id = s.player_id
+      WHERE p.student_id = ? AND s.status = '성공' LIMIT 1
+    `).get(studentIdNormalized);
+    if (sidSuccess) throw new Error('이미 성공한 학번입니다. 다른 학번으로 도전해주세요');
+  }
+
+  // UNIQUE 제거됨 → INSERT 항상 성공. 같은 phone/student_id의 새 player row 허용.
+  const result = db.prepare(
+    'INSERT INTO players (name, phone, student_id, consent_at) VALUES (?, ?, ?, ?)'
+  ).run(trimmed, phoneNormalized, studentIdNormalized, consentAt);
+  return { id: result.lastInsertRowid, name: trimmed };
 }
 
 /**

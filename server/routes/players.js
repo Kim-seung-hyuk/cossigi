@@ -27,14 +27,26 @@ router.post('/precheck', (req, res) => {
       return res.status(400).json({ error: sidValidation.error });
     }
 
+    // 🏷️ '성공' 세션이 이미 있는 phone/student_id만 차단.
+    //   시간초과·포기는 재도전 허용 (테이블에 player row가 남아도 OK).
     const db = getDatabase();
-    const phoneDup = db.prepare('SELECT id FROM players WHERE phone = ?').get(phoneValidation.normalized);
-    if (phoneDup) {
-      return res.status(409).json({ error: '이미 등록된 전화번호입니다. 다른 번호로 시도해주세요' });
+    const phoneSuccess = db.prepare(`
+      SELECT 1 FROM sessions s
+      JOIN players p ON p.id = s.player_id
+      WHERE p.phone = ? AND s.status = '성공'
+      LIMIT 1
+    `).get(phoneValidation.normalized);
+    if (phoneSuccess) {
+      return res.status(409).json({ error: '이미 성공한 전화번호입니다. 다른 번호로 도전해주세요' });
     }
-    const sidDup = db.prepare('SELECT id FROM players WHERE student_id = ?').get(sidValidation.normalized);
-    if (sidDup) {
-      return res.status(409).json({ error: '이미 등록된 학번입니다. 다른 학번으로 시도해주세요' });
+    const sidSuccess = db.prepare(`
+      SELECT 1 FROM sessions s
+      JOIN players p ON p.id = s.player_id
+      WHERE p.student_id = ? AND s.status = '성공'
+      LIMIT 1
+    `).get(sidValidation.normalized);
+    if (sidSuccess) {
+      return res.status(409).json({ error: '이미 성공한 학번입니다. 다른 학번으로 도전해주세요' });
     }
 
     res.json({ ok: true });

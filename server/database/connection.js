@@ -84,12 +84,19 @@ function initializeSchema(database) {
     }
   }
 
-  // 전화번호·학번 partial UNIQUE 인덱스 (NULL 다수 허용)
+  // 🏷️ 시간초과 재도전 허용 마이그레이션 (2026-05-17~):
+  //   phone/student_id UNIQUE를 제거한다. 대신 application 레벨에서
+  //   "성공한 sessions가 있는 phone/student_id"만 중복으로 본다.
+  //   - 처음 도전 → 시간초과 → 재도전 가능 (새 player row 생성)
+  //   - 성공한 후 재도전 → 차단 (precheck에서 409)
+  database.exec('DROP INDEX IF EXISTS idx_players_phone');
+  database.exec('DROP INDEX IF EXISTS idx_players_student_id');
+  // 비-UNIQUE 보조 인덱스: 성공 세션 조회 시 phone/student_id 빠른 lookup
   database.exec(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_players_phone      ON players(phone)      WHERE phone IS NOT NULL'
+    'CREATE INDEX IF NOT EXISTS idx_players_phone_lookup      ON players(phone)      WHERE phone IS NOT NULL'
   );
   database.exec(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_players_student_id ON players(student_id) WHERE student_id IS NOT NULL'
+    'CREATE INDEX IF NOT EXISTS idx_players_student_id_lookup ON players(student_id) WHERE student_id IS NOT NULL'
   );
 
   // messages 테이블 후속 컬럼

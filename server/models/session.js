@@ -134,13 +134,19 @@ function getSessionsByPlayerId(playerId) {
  */
 function getRankedSessions(limit) {
   const db = getDatabase();
+  // 🏷️ 정렬: 성공(0) → 시간초과(1) → 포기(2) → 그 외.
+  //   시상 등급(1~3등 / 4~30등)도 이 순서를 따른다 (leaderboard.js).
   let query = `
     SELECT s.*, p.name as player_name
     FROM sessions s
     JOIN players p ON s.player_id = p.id
     WHERE s.status != 'in_progress'
-    ORDER BY 
-      CASE WHEN s.status = '성공' THEN 0 ELSE 1 END ASC,
+    ORDER BY
+      CASE s.status
+        WHEN '성공'     THEN 0
+        WHEN '시간초과' THEN 1
+        WHEN '포기'     THEN 2
+        ELSE 3 END ASC,
       s.score DESC,
       s.elapsed_seconds ASC
   `;
