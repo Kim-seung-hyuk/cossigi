@@ -44,7 +44,7 @@ const LandingPage = (() => {
             <input type="text" id="player-student-id-input" class="input-line" placeholder="예: 20231234" maxlength="10" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
 
             <div class="landing__form-prefix landing__form-prefix--gap">전화번호 <span class="landing__form-note">(우수 참여자 보상 추첨용)</span></div>
-            <input type="tel" id="player-phone-input" class="input-line" placeholder="010-1234-5678" maxlength="13" autocomplete="off" inputmode="tel">
+            <input type="tel" id="player-phone-input" class="input-line" value="010-" placeholder="010-1234-5678" maxlength="13" autocomplete="off" inputmode="tel">
 
             <label class="consent-row" for="consent-check">
               <input type="checkbox" id="consent-check" class="consent-row__box">
@@ -115,7 +115,7 @@ const LandingPage = (() => {
       });
     }
 
-    // 전화번호 자동 하이픈 포맷팅
+    // 전화번호 자동 하이픈 포맷팅 + '010-' 프리필 보호
     if (phoneInput) {
       phoneInput.addEventListener('input', (e) => {
         const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -124,9 +124,18 @@ const LandingPage = (() => {
           formatted = `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
         } else if (digits.length > 3) {
           formatted = `${digits.slice(0,3)}-${digits.slice(3)}`;
+        } else if (digits.length === 3) {
+          formatted = `${digits}-`; // '010' 입력 시점에 자동 하이픈 유지
         }
         e.target.value = formatted;
       });
+      // 클릭/포커스 시 커서를 항상 마지막으로 (010- 앞쪽 클릭 방지)
+      const moveCaretEnd = () => {
+        const len = phoneInput.value.length;
+        try { phoneInput.setSelectionRange(len, len); } catch (_) {}
+      };
+      phoneInput.addEventListener('focus', moveCaretEnd);
+      phoneInput.addEventListener('click', moveCaretEnd);
     }
 
     if (consentBox) {
