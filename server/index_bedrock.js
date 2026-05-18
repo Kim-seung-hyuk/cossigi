@@ -2,7 +2,7 @@
  * Express App Entry Point — Mission: Zero Noise (Bedrock 전용)
  *
  * 동작은 server/index.js 와 100% 동일하지만, AI 호출만 Bedrock(Claude 3 Haiku)
- * 단독 모드로 강제. 폴백(Groq/Gemini) 없음.
+ * 단독 모드로 강제. Groq 폴백은 없고, Bedrock 실패 시 Gemini 1단 fallback만 사용.
  *
  * - USE_BEDROCK=1 환경변수를 require 직전에 set → routes/messages.js가
  *   aiServiceBedrock.js 를 로드함.
