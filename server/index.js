@@ -27,6 +27,11 @@ app.use(express.json());
 // Static file serving from 'public/' directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// 운영 대시보드 — /admin → public/admin.html (짧은 URL alias)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+});
+
 // --- Routes ---
 
 // Health check — 부스 노트북에서 1분마다 ping해서 서버 죽었는지 즉시 감지

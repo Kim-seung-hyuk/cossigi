@@ -171,6 +171,58 @@ function deletePlayer(id) {
   return result.changes > 0;
 }
 
+/**
+ * 관리자 페이지용 — 플레이어 목록 + 시도 횟수/베스트 점수 집계.
+ *
+ * 한 player row = 한 도전(재도전 정책상 같은 phone/student_id로 여러 row 가능).
+ * 각 row마다 그 player_id에 묶인 sessions로부터 LEFT JOIN 집계.
+ *
+ * @param {{limit?: number, offset?: number, q?: string}} opts
+ * @returns {{ total: number, players: object[] }}
+ */
+function listPlayersWithStats({ limit = 50, offset = 0, q = '' } = {}) {
+  const db = getDatabase();
+  const trimmedQ = (q || '').trim();
+  const like = `%${trimmedQ}%`;
+  const where = trimmedQ
+    ? 'WHERE p.name LIKE ? OR p.phone LIKE ? OR p.student_id LIKE ?'
+    : '';
+  const whereParams = trimmedQ ? [like, like, like] : [];
+
+  const total = db.prepare(
+    `SELECT COUNT(*) AS c FROM players p ${where}`
+  ).get(...whereParams).c;
+
+  // best_status: 성공 > 시간초과 > 포기 > in_progress 순으로 우선.
+  // 같은 등급 안에선 score DESC. CASE 식으로 정렬 후 LIMIT 1.
+  const players = db.prepare(`
+    SELECT
+      p.id, p.name, p.phone, p.student_id, p.consent_at, p.created_at,
+      COUNT(s.id)         AS session_count,
+      MAX(s.score)        AS best_score,
+      MAX(CASE WHEN s.status = '성공' THEN 1 ELSE 0 END) AS has_success,
+      (
+        SELECT s2.status FROM sessions s2
+         WHERE s2.player_id = p.id
+         ORDER BY CASE s2.status
+                    WHEN '성공'     THEN 0
+                    WHEN '시간초과' THEN 1
+                    WHEN '포기'     THEN 2
+                    ELSE 3 END ASC,
+                  s2.score DESC
+         LIMIT 1
+      ) AS best_status
+    FROM players p
+    LEFT JOIN sessions s ON s.player_id = p.id
+    ${where}
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...whereParams, limit, offset);
+
+  return { total, players };
+}
+
 module.exports = {
   validateName,
   validatePhone,
@@ -179,5 +231,6 @@ module.exports = {
   createPlayer,
   getPlayerById,
   getPlayerByName,
-  deletePlayer
+  deletePlayer,
+  listPlayersWithStats
 };

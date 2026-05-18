@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>코쓱이 운영 대시보드</title>
+<style>
+  :root {
+    --bg: #f5f7fa; --panel: #fff; --border: #e3e8ef; --text: #1f2937;
+    --muted: #6b7280; --accent: #2563eb; --accent-bg: #eff6ff;
+    --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Pretendard", "Apple SD Gothic Neo", sans-serif;
+         background: var(--bg); color: var(--text); font-size: 14px; }
+  header { background: var(--panel); border-bottom: 1px solid var(--border);
+           padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .spacer { flex: 1; }
+  header button { background: none; border: 1px solid var(--border); padding: 6px 12px;
+                  border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 13px; }
+  header button:hover { color: var(--text); border-color: var(--text); }
+  nav.tabs { background: var(--panel); border-bottom: 1px solid var(--border); padding: 0 24px;
+             display: flex; gap: 4px; }
+  nav.tabs button { background: none; border: none; padding: 12px 18px; cursor: pointer;
+                    font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid var(--border);
+                                    border-radius: 6px; font-size: 14px; background: var(--panel); }
+  .toolbar input[type=search] { min-width: 240px; }
+  .toolbar .status { color: var(--muted); font-size: 13px; margin-left: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+           font-size: 13px; vertical-align: middle; }
+  th { background: #f9fafb; font-weight: 600; color: var(--muted);
+       font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #fafbfc; }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  td.muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+           font-weight: 600; }
+  .badge.ok   { background: #dcfce7; color: var(--ok);   }
+  .badge.warn { background: #fef3c7; color: var(--warn); }
+  .badge.bad  { background: #fee2e2; color: var(--bad);  }
+  .badge.dim  { background: #f1f5f9; color: var(--muted); }
+  .pagination { display: flex; gap: 8px; align-items: center; justify-content: center;
+                margin-top: 16px; }
+  .pagination button { padding: 6px 12px; border: 1px solid var(--border);
+                       background: var(--panel); border-radius: 6px; cursor: pointer; }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination .info { color: var(--muted); font-size: 13px; min-width: 100px; text-align: center; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+           margin-bottom: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px; }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase;
+                 letter-spacing: 0.4px; margin-bottom: 6px; }
+  .card .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .gauge { background: var(--accent-bg); border: 1px solid var(--accent); border-radius: 8px;
+           padding: 16px; margin-bottom: 20px; }
+  .gauge .bar { background: #fff; border: 1px solid var(--border); height: 14px;
+                border-radius: 7px; overflow: hidden; margin-top: 8px; }
+  .gauge .bar > div { height: 100%; background: var(--accent); transition: width 0.4s; }
+  .gauge .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .gauge .head strong { font-size: 16px; }
+  .gauge .head span { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .error { background: #fee2e2; border: 1px solid var(--bad); color: var(--bad);
+           padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; }
+
+  /* Login overlay */
+  #login { position: fixed; inset: 0; background: var(--bg); display: flex;
+           align-items: center; justify-content: center; z-index: 1000; }
+  #login .box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+                padding: 32px; width: 360px; max-width: 90vw;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+  #login h2 { margin: 0 0 8px; font-size: 20px; }
+  #login p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+  #login input { width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+                 border-radius: 6px; font-size: 14px; font-family: monospace; }
+  #login button { width: 100%; margin-top: 12px; padding: 10px; background: var(--accent);
+                  color: #fff; border: none; border-radius: 6px; cursor: pointer;
+                  font-size: 14px; font-weight: 600; }
+  #login button:hover { background: #1d4ed8; }
+  #login .msg { margin-top: 10px; color: var(--bad); font-size: 13px; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="box">
+    <h2>운영 대시보드</h2>
+    <p>ADMIN_KEY 를 입력하세요. 입력값은 이 브라우저에만 저장됩니다.</p>
+    <input id="key-input" type="password" placeholder="x-admin-key" autocomplete="off">
+    <button id="key-submit">입장</button>
+    <div class="msg" id="login-msg"></div>
+  </div>
+</div>
+
+<header>
+  <h1>코쓱이 운영 대시보드</h1>
+  <span class="spacer"></span>
+  <button id="refresh-btn">새로고침</button>
+  <button id="logout-btn">로그아웃</button>
+</header>
+
+<nav class="tabs">
+  <button data-tab="players" class="active">플레이어</button>
+  <button data-tab="rankings">랭킹</button>
+  <button data-tab="cost">비용</button>
+</nav>
+
+<main>
+  <div id="err-box"></div>
+
+  <!-- 플레이어 -->
+  <section class="pane active" id="pane-players">
+    <div class="toolbar">
+      <input type="search" id="players-q" placeholder="이름·전화·학번 검색">
+      <select id="players-limit">
+        <option value="25">25개</option>
+        <option value="50" selected>50개</option>
+        <option value="100">100개</option>
+        <option value="200">200개</option>
+      </select>
+      <span class="status" id="players-status"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>이름</th><th>전화번호</th><th>학번</th>
+        <th>가입</th><th>시도</th><th>베스트</th><th>최고결과</th>
+      </tr></thead>
+      <tbody id="players-tbody"><tr><td colspan="8" class="empty">로딩 중...</td></tr></tbody>
+    </table>
+    <div class="pagination">
+      <button id="players-prev">이전</button>
+      <span class="info" id="players-pageinfo"></span>
+      <button id="players-next">다음</button>
+    </div>
+  </section>
+
+  <!-- 랭킹 -->
+  <section class="pane" id="pane-rankings">
+    <div class="toolbar">
+      <span class="status" id="rankings-status"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th>순위</th><th>이름</th><th>결과</th><th>점수</th><th>소요(초)</th><th>턴</th>
+      </tr></thead>
+      <tbody id="rankings-tbody"><tr><td colspan="6" class="empty">로딩 중...</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- 비용 -->
+  <section class="pane" id="pane-cost">
+    <div class="gauge" id="cost-gauge">
+      <div class="head">
+        <strong>월 한도 사용량</strong>
+        <span id="cost-gauge-text">—</span>
+      </div>
+      <div class="bar"><div id="cost-gauge-bar" style="width:0%"></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">
+        ※ 표시값은 최근 N게임 합계 기반 어림셈. 정확한 청구는 AWS 콘솔 기준.
+      </div>
+    </div>
+    <div class="toolbar">
+      <label>최근 <select id="cost-limit">
+        <option value="10">10</option>
+        <option value="30" selected>30</option>
+        <option value="100">100</option>
+      </select> 게임</label>
+      <span class="status" id="cost-status"></span>
+    </div>
+    <div class="cards" id="cost-cards"></div>
+    <table>
+      <thead><tr>
+        <th>시작</th><th>이름</th><th>결과</th><th>턴</th>
+        <th>호출</th><th>입력토큰</th><th>출력토큰</th><th>USD</th><th>KRW</th>
+      </tr></thead>
+      <tbody id="cost-tbody"><tr><td colspan="9" class="empty">로딩 중...</td></tr></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+// ---------- 상태 ----------
+const KEY_STORAGE = 'cosseogi-admin-key';
+const MONTHLY_BUDGET_KRW = 50000;
+let ADMIN_KEY = null;
+let currentTab = 'players';
+const playersState = { limit: 50, offset: 0, q: '', total: 0 };
+
+// ---------- 인증 ----------
+function setKey(k) {
+  ADMIN_KEY = k;
+  localStorage.setItem(KEY_STORAGE, k);
+}
+function clearKey() {
+  ADMIN_KEY = null;
+  localStorage.removeItem(KEY_STORAGE);
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('key-input').value = '';
+  document.getElementById('login-msg').textContent = '';
+}
+async function tryKey(k) {
+  const r = await fetch('/api/admin/cost-stats?limit=1', { headers: { 'x-admin-key': k } });
+  if (r.status === 401) return { ok: false, reason: '키가 일치하지 않습니다' };
+  if (r.status === 503) return { ok: false, reason: '서버에 ADMIN_KEY 가 설정되지 않았습니다' };
+  if (!r.ok) return { ok: false, reason: 'HTTP ' + r.status };
+  return { ok: true };
+}
+
+async function api(path) {
+  const r = await fetch(path, { headers: { 'x-admin-key': ADMIN_KEY } });
+  if (r.status === 401) { clearKey(); throw new Error('인증 만료. 다시 로그인하세요.'); }
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+function showError(msg) {
+  const box = document.getElementById('err-box');
+  box.innerHTML = '<div class="error">' + msg + '</div>';
+  setTimeout(() => { box.innerHTML = ''; }, 5000);
+}
+
+// ---------- 유틸 ----------
+function statusBadge(s) {
+  if (s === '성공')   return '<span class="badge ok">성공</span>';
+  if (s === '시간초과') return '<span class="badge warn">시간초과</span>';
+  if (s === '포기')   return '<span class="badge bad">포기</span>';
+  if (s === 'in_progress') return '<span class="badge dim">진행중</span>';
+  return '<span class="badge dim">' + (s || '-') + '</span>';
+}
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fmtPhone(p) {
+  if (!p) return '-';
+  if (p.length === 11) return p.slice(0,3) + '-' + p.slice(3,7) + '-' + p.slice(7);
+  if (p.length === 10) return p.slice(0,3) + '-' + p.slice(3,6) + '-' + p.slice(6);
+  return p;
+}
+function fmtDate(s) {
+  if (!s) return '-';
+  return s.replace('T', ' ').replace('Z', '').slice(0, 16);
+}
+
+// ---------- 플레이어 ----------
+async function loadPlayers() {
+  const tbody = document.getElementById('players-tbody');
+  tbody.innerHTML = '<tr><td colspan="8" class="empty">로딩 중...</td></tr>';
+  try {
+    const qs = new URLSearchParams({
+      limit: playersState.limit, offset: playersState.offset, q: playersState.q
+    });
+    const data = await api('/api/admin/players?' + qs);
+    playersState.total = data.total;
+    if (!data.players.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">검색 결과 없음</td></tr>';
+    } else {
+      tbody.innerHTML = data.players.map((p, i) => `
+        <tr>
+          <td class="muted num">${playersState.offset + i + 1}</td>
+          <td>${esc(p.name)}</td>
+          <td class="muted">${esc(fmtPhone(p.phone))}</td>
+          <td class="muted">${esc(p.student_id || '-')}</td>
+          <td class="muted">${esc(fmtDate(p.created_at))}</td>
+          <td class="num">${p.session_count}</td>
+          <td class="num">${p.best_score == null ? '-' : p.best_score}</td>
+          <td>${statusBadge(p.best_status)}</td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('players-status').textContent = '총 ' + data.total + '명';
+    renderPlayersPagination();
+  } catch (e) { showError('플레이어 로드 실패: ' + e.message); }
+}
+function renderPlayersPagination() {
+  const { offset, limit, total } = playersState;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  document.getElementById('players-pageinfo').textContent = page + ' / ' + totalPages;
+  document.getElementById('players-prev').disabled = offset === 0;
+  document.getElementById('players-next').disabled = offset + limit >= total;
+}
+
+// ---------- 랭킹 ----------
+async function loadRankings() {
+  const tbody = document.getElementById('rankings-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty">로딩 중...</td></tr>';
+  try {
+    const data = await api('/api/rankings');
+    const rows = data.rankings || [];
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">기록 없음</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td class="num">${r.rank}</td>
+          <td>${esc(r.playerName)}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="num">${r.score == null ? '-' : r.score}</td>
+          <td class="num muted">${r.elapsedSeconds == null ? '-' : r.elapsedSeconds}</td>
+          <td class="num muted">${r.turnCount}</td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('rankings-status').textContent = '총 ' + rows.length + '건';
+  } catch (e) { showError('랭킹 로드 실패: ' + e.message); }
+}
+
+// ---------- 비용 ----------
+async function loadCost() {
+  const tbody = document.getElementById('cost-tbody');
+  tbody.innerHTML = '<tr><td colspan="9" class="empty">로딩 중...</td></tr>';
+  try {
+    const limit = document.getElementById('cost-limit').value;
+    const data = await api('/api/admin/cost-stats?limit=' + limit);
+    const games = data.games || [];
+    const summary = data.summary;
+
+    // 한도 게이지
+    const usedKrw = summary ? summary.totalCostKrw : 0;
+    const pct = Math.min(100, (usedKrw / MONTHLY_BUDGET_KRW) * 100);
+    document.getElementById('cost-gauge-bar').style.width = pct + '%';
+    document.getElementById('cost-gauge-text').textContent =
+      '₩' + usedKrw.toFixed(0) + ' / ₩' + MONTHLY_BUDGET_KRW.toLocaleString() +
+      ' (' + pct.toFixed(2) + '%, 최근 ' + limit + '게임 기준)';
+
+    // 요약 카드
+    const cards = document.getElementById('cost-cards');
+    if (summary) {
+      cards.innerHTML = `
+        <div class="card"><div class="label">게임 수</div><div class="value">${summary.gameCount}</div></div>
+        <div class="card"><div class="label">총 호출</div><div class="value">${summary.totalBedrockCalls}</div>
+          <div class="sub">평균 ${summary.avgCallsPerGame}/게임</div></div>
+        <div class="card"><div class="label">입력 토큰</div><div class="value">${summary.totalInputTokens.toLocaleString()}</div>
+          <div class="sub">평균 ${summary.avgInputTokensPerGame}/게임</div></div>
+        <div class="card"><div class="label">출력 토큰</div><div class="value">${summary.totalOutputTokens.toLocaleString()}</div>
+          <div class="sub">평균 ${summary.avgOutputTokensPerGame}/게임</div></div>
+        <div class="card"><div class="label">총 비용 (KRW)</div><div class="value">₩${summary.totalCostKrw.toFixed(0)}</div>
+          <div class="sub">평균 ₩${summary.avgCostPerGameKrw.toFixed(2)}/게임</div></div>
+      `;
+    } else {
+      cards.innerHTML = '<div class="empty">데이터 없음</div>';
+    }
+
+    if (!games.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">기록 없음</td></tr>';
+    } else {
+      tbody.innerHTML = games.map(g => `
+        <tr>
+          <td class="muted">${esc(fmtDate(g.startedAt))}</td>
+          <td>${esc(g.playerName)}</td>
+          <td>${statusBadge(g.status)}</td>
+          <td class="num">${g.turnCount}</td>
+          <td class="num">${g.bedrockCallCount}</td>
+          <td class="num muted">${g.inputTokens.toLocaleString()}</td>
+          <td class="num muted">${g.outputTokens.toLocaleString()}</td>
+          <td class="num">$${g.costUsd.toFixed(4)}</td>
+          <td class="num">₩${g.costKrw.toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('cost-status').textContent = '모델 ' + data.modelId;
+  } catch (e) { showError('비용 로드 실패: ' + e.message); }
+}
+
+// ---------- 탭 ----------
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + tab).classList.add('active');
+  loadCurrent();
+}
+function loadCurrent() {
+  if (currentTab === 'players')  loadPlayers();
+  if (currentTab === 'rankings') loadRankings();
+  if (currentTab === 'cost')     loadCost();
+}
+
+// ---------- 이벤트 ----------
+document.getElementById('key-submit').addEventListener('click', async () => {
+  const k = document.getElementById('key-input').value.trim();
+  const msg = document.getElementById('login-msg');
+  if (!k) { msg.textContent = '키를 입력하세요'; return; }
+  msg.textContent = '확인 중...';
+  const res = await tryKey(k);
+  if (!res.ok) { msg.textContent = res.reason; return; }
+  setKey(k);
+  document.getElementById('login').style.display = 'none';
+  loadCurrent();
+});
+document.getElementById('key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('key-submit').click();
+});
+document.getElementById('logout-btn').addEventListener('click', clearKey);
+document.getElementById('refresh-btn').addEventListener('click', loadCurrent);
+document.querySelectorAll('nav.tabs button').forEach(b => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+let qTimer = null;
+document.getElementById('players-q').addEventListener('input', e => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    playersState.q = e.target.value; playersState.offset = 0; loadPlayers();
+  }, 250);
+});
+document.getElementById('players-limit').addEventListener('change', e => {
+  playersState.limit = parseInt(e.target.value, 10); playersState.offset = 0; loadPlayers();
+});
+document.getElementById('players-prev').addEventListener('click', () => {
+  playersState.offset = Math.max(0, playersState.offset - playersState.limit); loadPlayers();
+});
+document.getElementById('players-next').addEventListener('click', () => {
+  playersState.offset += playersState.limit; loadPlayers();
+});
+document.getElementById('cost-limit').addEventListener('change', loadCost);
+
+// ---------- 부팅 ----------
+(async function init() {
+  const saved = localStorage.getItem(KEY_STORAGE);
+  if (saved) {
+    const r = await tryKey(saved);
+    if (r.ok) {
+      setKey(saved);
+      document.getElementById('login').style.display = 'none';
+      loadCurrent();
+      return;
+    }
+    localStorage.removeItem(KEY_STORAGE);
+  }
+  document.getElementById('key-input').focus();
+})();
+</script>
+</body>
+</html>

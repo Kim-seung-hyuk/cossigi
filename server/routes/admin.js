@@ -1,16 +1,19 @@
 /**
- * Admin API — Bedrock 토큰/비용 통계.
+ * Admin API — 관리자 전용 (ADMIN_KEY 인증 필수).
  *
  * GET /api/admin/cost-stats?limit=10
- *   최근 N개(기본 10) 게임의 Bedrock 토큰 사용량과 USD/KRW 비용 평균을 반환.
+ *   최근 N개(기본 10) 게임의 Bedrock 토큰 사용량과 USD/KRW 비용 평균.
+ * GET /api/admin/players?limit=50&offset=0&q=
+ *   플레이어 목록 + 시도 횟수/베스트 점수 집계 (관리자 DB 페이지용).
  *
- * 인증 없음 — 운영 단계에서 외부 노출 시 reverse proxy/방화벽으로 차단할 것.
+ * 인증: 헤더 `x-admin-key: <KEY>` 또는 쿼리 `?key=<KEY>`. ADMIN_KEY 미설정 시 503.
  */
 
 const express = require('express');
 const router = express.Router();
 const config = require('../config');
 const sessionModel = require('../models/session');
+const playerModel = require('../models/player');
 const {
   calculateBedrockCostUsd,
   HAIKU_INPUT_PRICE_PER_1K_USD,
@@ -101,6 +104,20 @@ router.get('/cost-stats', (req, res) => {
   } catch (err) {
     console.error('[Admin] cost-stats error:', err.message);
     res.status(500).json({ error: 'cost-stats 조회 중 오류가 발생했습니다' });
+  }
+});
+
+router.get('/players', (req, res) => {
+  try {
+    const limit  = Math.min(Math.max(parseInt(req.query.limit, 10)  || 50, 1), 200);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const q      = (req.query.q || '').toString().slice(0, 50);
+
+    const { total, players } = playerModel.listPlayersWithStats({ limit, offset, q });
+    res.json({ total, limit, offset, q, players });
+  } catch (err) {
+    console.error('[Admin] players error:', err.message);
+    res.status(500).json({ error: 'players 조회 중 오류가 발생했습니다' });
   }
 });
 
