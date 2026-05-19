@@ -10,18 +10,32 @@ const config = require('../config');
 const TIME_LIMIT = config.GAME_TIME_LIMIT; // 180 seconds
 
 /**
+ * DB의 datetime 문자열을 UTC로 강제 파싱.
+ *
+ * SQLite의 `datetime('now')` 는 `"YYYY-MM-DD HH:MM:SS"` 형식이고 **타임존 표시가 없지만
+ * 실제 값은 UTC**. node가 그 문자열을 `new Date(s)` 로 받으면 ISO가 아니므로 시스템
+ * 로컬 타임존으로 해석함. 시스템 TZ가 UTC면 우연히 맞지만, KST면 9시간 오차가 생기고
+ * elapsed 가 즉시 TIME_LIMIT 을 초과 → 게임 시작 즉시 시간초과 처리되는 버그가 됨.
+ * 'T' 와 'Z' 를 채워 ISO UTC 로 강제한 뒤 파싱.
+ */
+function parseDbDate(s) {
+  if (!s) return null;
+  const iso = s.includes('T') ? s : s.replace(' ', 'T') + 'Z';
+  const d = new Date(iso);
+  return isNaN(d) ? null : d;
+}
+
+/**
  * Calculate elapsed seconds since session start.
- * 
- * @param {string} startedAt - ISO datetime string of session start (from DB)
+ *
+ * @param {string} startedAt - SQLite/ISO datetime string of session start (UTC, from DB)
  * @returns {number} Elapsed seconds (floored to integer)
  */
 function getElapsedSeconds(startedAt) {
-  if (!startedAt) return 0;
+  const d = parseDbDate(startedAt);
+  if (!d) return 0;
 
-  const startTime = new Date(startedAt).getTime();
-  const now = Date.now();
-  const elapsed = Math.floor((now - startTime) / 1000);
-
+  const elapsed = Math.floor((Date.now() - d.getTime()) / 1000);
   return Math.max(0, elapsed);
 }
 
