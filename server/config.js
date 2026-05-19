@@ -25,9 +25,9 @@ module.exports = {
   ADMIN_KEY: process.env.ADMIN_KEY || null,
 
   // 🏷️ 게임 정답 버전 — 운영자가 어떤 버전 deploy 중인지 식별용 (/api/health에 노출).
-  //   'v1-5G-통신'      : 정답 AWS / 5G / 통신     (현재 main)
-  //   'v2-양자-보안'    : 정답 AWS / 양자 / 보안   (git tag v2-quantum-security)
-  GAME_VERSION: process.env.GAME_VERSION || 'v1-5G-통신',
+  //   'v1-5G-통신'      : 정답 AWS / 5G / 통신     (git tag v1-5g-tongsin)
+  //   'v2-양자-보안'    : 정답 AWS / 양자 / 보안   (현재 main, prompts/gameManager는 v2.1 기반)
+  GAME_VERSION: process.env.GAME_VERSION || 'v2-양자-보안',
   MAX_RESPONSE_LENGTH: parseInt(process.env.MAX_RESPONSE_LENGTH, 10) || 280,
 
   // Groq (Primary) — fastest LPU inference, OpenAI-compatible
