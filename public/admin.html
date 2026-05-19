@@ -255,7 +255,18 @@ function fmtPhone(p) {
 }
 function fmtDate(s) {
   if (!s) return '-';
-  return s.replace('T', ' ').replace('Z', '').slice(0, 16);
+  // DB 문자열은 UTC 기준 (datetime('now') / toISOString). Asia/Seoul 로 표시.
+  // 두 포맷 처리: 'YYYY-MM-DD HH:MM:SS' (SQLite) / 'YYYY-MM-DDTHH:MM:SS.sssZ' (ISO).
+  const iso = s.includes('T') ? s : s.replace(' ', 'T') + 'Z';
+  const d = new Date(iso);
+  if (isNaN(d)) return s;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  const v = t => (parts.find(p => p.type === t) || {}).value || '';
+  return `${v('year')}-${v('month')}-${v('day')} ${v('hour')}:${v('minute')}`;
 }
 
 // ---------- 플레이어 ----------
