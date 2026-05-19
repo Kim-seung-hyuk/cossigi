@@ -142,13 +142,15 @@ const IntroPage = (() => {
     function typeNext() {
       if (i >= text.length) {
         isTyping = false;
-        // Show hint or CTA after typing is done
+        // 마지막 패널: CTA 버튼 + "화면 클릭으로도 시작" 안내 둘 다 표시.
         if (panel.isFinal) {
           ctaEl.style.display = 'flex';
           requestAnimationFrame(() => ctaEl.classList.add('visible'));
+          document.getElementById('intro-hint-text').textContent = '▸ 화면을 클릭해도 시작';
         } else {
-          hintEl.style.opacity = '1';
+          document.getElementById('intro-hint-text').textContent = '▸ 화면을 클릭하면 계속';
         }
+        hintEl.style.opacity = '1';
         return;
       }
       const ch = text[i];
@@ -187,9 +189,11 @@ const IntroPage = (() => {
     if (panel.isFinal) {
       ctaEl.style.display = 'flex';
       requestAnimationFrame(() => ctaEl.classList.add('visible'));
+      document.getElementById('intro-hint-text').textContent = '▸ 화면을 클릭해도 시작';
     } else {
-      hintEl.style.opacity = '1';
+      document.getElementById('intro-hint-text').textContent = '▸ 화면을 클릭하면 계속';
     }
+    hintEl.style.opacity = '1';
   }
 
   function handleAdvance() {
@@ -199,7 +203,8 @@ const IntroPage = (() => {
       return;
     }
     if (currentPanel >= panels.length - 1) {
-      // Final panel — wait for explicit start button
+      // 마지막 패널 — 화면 클릭도 미션 시작으로 처리 (CTA 버튼과 동등).
+      handleConfirm();
       return;
     }
     currentPanel += 1;
