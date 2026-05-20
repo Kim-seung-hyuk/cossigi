@@ -120,7 +120,7 @@ router.post('/:id/timeout', (req, res) => {
       return res.json({
         status: session.status,
         score: session.score || 0,
-        elapsedSeconds: session.elapsed_seconds || 180,
+        elapsedSeconds: session.elapsed_seconds || timerService.getTimeoutElapsed(),
         turnCount: session.turn_count || 0,
         keywordsCollected: JSON.parse(session.keywords_collected || '[]'),
         alreadyEnded: true

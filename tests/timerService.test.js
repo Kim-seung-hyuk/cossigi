@@ -12,8 +12,8 @@ const {
 
 describe('Timer Service', () => {
   describe('TIME_LIMIT', () => {
-    it('should be 180 seconds', () => {
-      expect(TIME_LIMIT).toBe(180);
+    it('should be 120 seconds', () => {
+      expect(TIME_LIMIT).toBe(120);
     });
   });
 
@@ -57,8 +57,8 @@ describe('Timer Service', () => {
     it('should return full time for just-started session', () => {
       const startedAt = new Date().toISOString();
       const remaining = getRemainingSeconds(startedAt);
-      expect(remaining).toBeGreaterThanOrEqual(179);
-      expect(remaining).toBeLessThanOrEqual(180);
+      expect(remaining).toBeGreaterThanOrEqual(119);
+      expect(remaining).toBeLessThanOrEqual(120);
     });
   });
 
@@ -77,7 +77,7 @@ describe('Timer Service', () => {
       const startedAt = new Date(Date.now() - 200000).toISOString();
       const result = checkTimeLimit(startedAt);
       expect(result.isExpired).toBe(true);
-      expect(result.elapsedSeconds).toBe(180);
+      expect(result.elapsedSeconds).toBe(120);
       expect(result.remainingSeconds).toBe(0);
     });
 
@@ -85,21 +85,21 @@ describe('Timer Service', () => {
       const result = checkTimeLimit(null);
       expect(result.isExpired).toBe(false);
       expect(result.elapsedSeconds).toBe(0);
-      expect(result.remainingSeconds).toBe(180);
+      expect(result.remainingSeconds).toBe(120);
     });
 
-    it('should return expired at exactly 180 seconds', () => {
-      const startedAt = new Date(Date.now() - 180000).toISOString();
+    it('should return expired at exactly TIME_LIMIT seconds', () => {
+      const startedAt = new Date(Date.now() - 120000).toISOString();
       const result = checkTimeLimit(startedAt);
       expect(result.isExpired).toBe(true);
-      expect(result.elapsedSeconds).toBe(180);
+      expect(result.elapsedSeconds).toBe(120);
       expect(result.remainingSeconds).toBe(0);
     });
   });
 
   describe('getTimeoutElapsed', () => {
-    it('should return 180', () => {
-      expect(getTimeoutElapsed()).toBe(180);
+    it('should return 120', () => {
+      expect(getTimeoutElapsed()).toBe(120);
     });
   });
 });

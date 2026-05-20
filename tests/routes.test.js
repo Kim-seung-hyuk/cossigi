@@ -38,7 +38,7 @@ describe('POST /api/sessions', () => {
     expect(res.body.noiseLevel).toBe(100);
     expect(res.body).toHaveProperty('startedAt');
     expect(res.body).toHaveProperty('remainingSeconds');
-    expect(res.body.remainingSeconds).toBeLessThanOrEqual(180);
+    expect(res.body.remainingSeconds).toBeLessThanOrEqual(120);
   });
 
   it('should reject empty name', async () => {

@@ -7,7 +7,7 @@
 
 const config = require('../config');
 
-const TIME_LIMIT = config.GAME_TIME_LIMIT; // 180 seconds
+const TIME_LIMIT = config.GAME_TIME_LIMIT; // 120 seconds (config 따라감)
 
 /**
  * DB의 datetime 문자열을 UTC로 강제 파싱.
@@ -86,7 +86,7 @@ function checkTimeLimit(startedAt) {
  * Get the fixed elapsed time for timeout sessions.
  * When a session times out, elapsed time is always fixed at TIME_LIMIT.
  * 
- * @returns {number} Fixed timeout elapsed seconds (180)
+ * @returns {number} Fixed timeout elapsed seconds (= config.GAME_TIME_LIMIT)
  */
 function getTimeoutElapsed() {
   return TIME_LIMIT;

@@ -49,10 +49,11 @@ function checkKeyword(phase, message) {
 /**
  * Calculate the score for a completed session.
  * 
- * Success: Score = 1000 - (Turn × 10) - (elapsed_seconds × 0.5)
- * Timeout: Score = 1000 - (completed phases turns sum × 10) - (180 × 0.5)
+ * Success: Score = 1000 - (Turn × 10) - (elapsed_seconds × 1.5)
+ * Timeout: Score = 1000 - (completed phases turns sum × 10) - (GAME_TIME_LIMIT × 1.5)
  *          Only turns from fully completed phases are counted.
  *          The phase that was in progress at timeout is NOT included.
+ *          시간초과 패널티는 config.GAME_TIME_LIMIT(2분=120s)에 비례.
  * Quit: Score = 0
  * 
  * @param {object} session - Session data object
@@ -84,7 +85,7 @@ function calculateScore(session) {
     return Math.max(0, Math.round(1000 - (turns * 10) - (elapsed * 1.5)));
   }
 
-  // Timeout: Only count turns from completed phases + 180 seconds fixed
+  // Timeout: Only count turns from completed phases + 시간초과 패널티 (GAME_TIME_LIMIT * 1.5)
   if (status === 'timeout' || status === '시간초과') {
     let completedTurns = 0;
     if (session.phase1_completed) {
@@ -96,7 +97,7 @@ function calculateScore(session) {
     if (session.phase3_completed) {
       completedTurns += session.phase3_turns || 0;
     }
-    return Math.max(0, Math.round(1000 - (completedTurns * 10) - (180 * 1.5)));
+    return Math.max(0, Math.round(1000 - (completedTurns * 10) - (config.GAME_TIME_LIMIT * 1.5)));
   }
 
   return 0;

@@ -8,7 +8,7 @@ module.exports = {
   DB_PATH: process.env.DB_PATH || './data/game.db',
 
   // Game settings
-  GAME_TIME_LIMIT: parseInt(process.env.GAME_TIME_LIMIT, 10) || 180,
+  GAME_TIME_LIMIT: parseInt(process.env.GAME_TIME_LIMIT, 10) || 120,
 
   // AI common
   // 코쓱이 응답은 잡담 20~50자 / 일반 60~120자 강제 → 한국어 약 150토큰 한계.

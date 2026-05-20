@@ -129,7 +129,7 @@ describe('Game Manager', () => {
         const session = {
           status: 'timeout',
           turn_count: 12,
-          elapsed_seconds: 180,
+          elapsed_seconds: 120,
           phase1_completed: 1,
           phase2_completed: 1,
           phase3_completed: 0,
@@ -138,15 +138,15 @@ describe('Game Manager', () => {
           phase3_turns: 7
         };
         // Completed turns: 3 + 2 = 5 (phase3 not completed, so its 7 turns excluded)
-        // 1000 - (5 × 10) - (180 × 0.5) = 1000 - 50 - 90 = 860
-        expect(calculateScore(session)).toBe(860);
+        // 1000 - (5 × 10) - (120 × 1.5) = 1000 - 50 - 180 = 770
+        expect(calculateScore(session)).toBe(770);
       });
 
       it('should handle no completed phases', () => {
         const session = {
           status: 'timeout',
           turn_count: 5,
-          elapsed_seconds: 180,
+          elapsed_seconds: 120,
           phase1_completed: 0,
           phase2_completed: 0,
           phase3_completed: 0,
@@ -155,15 +155,15 @@ describe('Game Manager', () => {
           phase3_turns: 0
         };
         // No completed phases: turns = 0
-        // 1000 - (0 × 10) - (180 × 0.5) = 1000 - 0 - 90 = 910
-        expect(calculateScore(session)).toBe(910);
+        // 1000 - (0 × 10) - (120 × 1.5) = 1000 - 0 - 180 = 820
+        expect(calculateScore(session)).toBe(820);
       });
 
       it('should handle Korean status "시간초과"', () => {
         const session = {
           status: '시간초과',
           turn_count: 8,
-          elapsed_seconds: 180,
+          elapsed_seconds: 120,
           phase1_completed: 1,
           phase2_completed: 0,
           phase3_completed: 0,
@@ -172,8 +172,8 @@ describe('Game Manager', () => {
           phase3_turns: 0
         };
         // Completed turns: 2 (only phase1)
-        // 1000 - (2 × 10) - (180 × 0.5) = 1000 - 20 - 90 = 890
-        expect(calculateScore(session)).toBe(890);
+        // 1000 - (2 × 10) - (120 × 1.5) = 1000 - 20 - 180 = 800
+        expect(calculateScore(session)).toBe(800);
       });
     });
 

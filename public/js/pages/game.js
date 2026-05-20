@@ -144,7 +144,7 @@ const GamePage = (() => {
 
     const timerEl = document.getElementById('game-timer');
     TimerComponent.mount(timerEl);
-    TimerComponent.start(state.remainingSeconds || 180, handleTimeout);
+    TimerComponent.start(state.remainingSeconds || 120, handleTimeout);
 
     try {
       const sessionData = await ApiService.getSession(sessionId);
@@ -481,7 +481,7 @@ const GamePage = (() => {
       window.gameResult = {
         status: '시간초과',
         score: data.score,
-        elapsedSeconds: data.elapsedSeconds || 180,
+        elapsedSeconds: data.elapsedSeconds || 120,
         turnCount: data.turnCount != null ? data.turnCount : turnCount,
         keywords: data.keywordsCollected || keywords
       };
@@ -490,7 +490,7 @@ const GamePage = (() => {
       window.gameResult = {
         status: '시간초과',
         score: null,
-        elapsedSeconds: 180,
+        elapsedSeconds: 120,
         turnCount: turnCount
       };
     }
@@ -502,7 +502,7 @@ const GamePage = (() => {
     window.gameResult = {
       status: data.gameOverReason || '시간초과',
       score: data.score,
-      elapsedSeconds: data.elapsedSeconds || 180,
+      elapsedSeconds: data.elapsedSeconds || 120,
       turnCount: turnCount
     };
     window.location.hash = '#result';

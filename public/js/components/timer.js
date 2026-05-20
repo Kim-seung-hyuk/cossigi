@@ -1,9 +1,9 @@
 /**
- * Timer Component - 180-second countdown
+ * Timer Component - 120-second countdown (server config.GAME_TIME_LIMIT 따라감)
  */
 const TimerComponent = (() => {
   let intervalId = null;
-  let remainingSeconds = 180;
+  let remainingSeconds = 120;
   let onTimeoutCallback = null;
   let element = null;
 

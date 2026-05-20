@@ -234,11 +234,11 @@ describe('Session Model', () => {
 
     it('should end session with timeout status', () => {
       const session = sessionModel.createSession(testPlayer.id);
-      const ended = sessionModel.endSession(session.id, '시간초과', 860, 180);
+      const ended = sessionModel.endSession(session.id, '시간초과', 770, 120);
 
       expect(ended.status).toBe('시간초과');
-      expect(ended.score).toBe(860);
-      expect(ended.elapsed_seconds).toBe(180);
+      expect(ended.score).toBe(770);
+      expect(ended.elapsed_seconds).toBe(120);
     });
 
     it('should end session with quit status', () => {
@@ -275,7 +275,7 @@ describe('Session Model', () => {
       // End sessions with different statuses and scores
       sessionModel.endSession(s1.id, '성공', 900, 50);
       sessionModel.endSession(s2.id, '성공', 850, 60);
-      sessionModel.endSession(s3.id, '시간초과', 860, 180);
+      sessionModel.endSession(s3.id, '시간초과', 770, 120);
       sessionModel.endSession(s4.id, '포기', 0, 30);
 
       const rankings = sessionModel.getRankedSessions();
